@@ -1,34 +1,33 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Journey to Courage</title>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Before I Forget - Prototype</title>
     <link rel="stylesheet" href="style.css" />
-
-    <!-- p5 FIRST -->
     <script src="libraries/p5.min.js"></script>
-
-    <!-- Basic world objects -->
-    <script src="Platform.js"></script>
-
-    <!-- Letter collectible system -->
-    <script src="Letter.js"></script>
-
-    <!-- World + Level architecture -->
-    <script src="WorldLevel.js"></script>
-    <script src="LevelLoader.js"></script>
-
-    <!-- Player + Camera -->
-    <script src="BlobPlayer.js"></script>
-    <script src="Camera2D.js"></script>
-
-    <!-- Sketch LAST -->
-    <script src="sketch.js"></script>
   </head>
-
   <body>
-    <main></main>
+    <div id="main-container">
+      <div id="canvas-holder"></div>
+
+      <div id="chat-box">
+        <div id="npc-header">
+          <span id="npc-name">System</span>
+        </div>
+        <div id="dialogue-container">
+          <p id="dialogue-text">
+            Use Arrow Keys to move. Walk into items to interact.
+          </p>
+        </div>
+        <div id="options-container" style="display: none">
+          <button id="btn-yes" onclick="handleChoice('yes')">YES</button>
+          <button id="btn-no" onclick="handleChoice('no')">NO</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="src/WorldLevel.js"></script>
+    <script src="sketch.js"></script>
   </body>
 </html>

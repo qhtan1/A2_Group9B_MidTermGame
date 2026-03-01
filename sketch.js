@@ -1,151 +1,134 @@
-const VIEW_W = 800;
-const VIEW_H = 480;
-
-let allLevelsData;
-let levelIndex = 0;
-
-let level;
-let player;
-let cam;
-
-let collectedCount = 0;
-let finalFormed = false;
-let showSkyLetters = true;
-let cinematicTimer = 0;
-
-function preload() {
-  allLevelsData = loadJSON("levels.json");
-}
+let world;
+// Player moves in X and Y now
+let player = { x: 80, y: 70, w: 10, h: 10 };
+let gameState = "EXPLORE"; // Can be EXPLORE or INTERACT
+let currentInteraction = null;
 
 function setup() {
-  createCanvas(VIEW_W, VIEW_H);
-  textFont("Georgia");
-  cam = new Camera2D(width, height);
-  loadLevel(levelIndex);
-}
+  // Classic Gameboy Resolution (160x144)
+  let canvas = createCanvas(160, 144);
+  canvas.parent("canvas-holder");
+  noSmooth();
 
-function loadLevel(i) {
-  level = LevelLoader.fromLevelsJson(allLevelsData, i);
-
-  player = new BlobPlayer();
-  player.spawnFromLevel(level);
-
-  cam.x = player.x - width / 2;
-  cam.y = 0;
-  cam.clampToWorld(level.w, level.h);
-
-  collectedCount = 0;
-  finalFormed = false;
-  showSkyLetters = true;
-  cinematicTimer = 0;
-
-  assignSkyPositions();
+  world = new WorldLevel();
 }
 
 function draw() {
-  if (!finalFormed) {
-    player.update(level);
+  if (gameState === "EXPLORE") {
+    drawTopDownRoom();
+    handleMovement();
+    checkInteractions();
+    drawPlayer();
+  } else if (gameState === "INTERACT") {
+    drawCloseUpItem();
   }
+}
 
-  for (let l of level.letters) {
-    if (l.tryCollect(player)) {
-      collectedCount++;
+function drawTopDownRoom() {
+  background("#ECE7D1"); // Floor (Light Cream)
+
+  fill("#8E977D"); // Wall color
+  rect(0, 0, width, 20); // Top wall
+
+  if (world.getCurrentRoom() === "LivingRoom") {
+    // Couch
+    fill("#DBCEA5");
+    rect(10, 30, 80, 20);
+
+    // Table with Bowl
+    fill("#8A7650");
+    rect(100, 60, 40, 30);
+    fill("#ECE7D1"); // The bowl
+    ellipse(120, 75, 12, 12);
+  } else if (world.getCurrentRoom() === "Bathroom") {
+    // Sink
+    fill("#8A7650");
+    rect(110, 20, 30, 20);
+    // Tub
+    fill("#DBCEA5");
+    rect(30, 90, 40, 20);
+  }
+}
+
+function drawPlayer() {
+  fill("#2E2E2E"); // Dark player character
+  noStroke();
+  rect(player.x, player.y, player.w, player.h);
+}
+
+function handleMovement() {
+  let speed = 1.5;
+  if (keyIsDown(UP_ARROW)) player.y -= speed;
+  if (keyIsDown(DOWN_ARROW)) player.y += speed;
+  if (keyIsDown(LEFT_ARROW)) player.x -= speed;
+  if (keyIsDown(RIGHT_ARROW)) player.x += speed;
+
+  // Constrain to top wall and bottom floor
+  player.y = constrain(player.y, 20, height - player.h);
+
+  // Room switching
+  let newPos = world.checkDoorways(player.x, player.y, width, height);
+  player.x = newPos.x;
+  player.y = newPos.y;
+}
+
+function checkInteractions() {
+  // Check if player is near the table in the Living Room
+  if (world.getCurrentRoom() === "LivingRoom") {
+    let distToTable = dist(player.x, player.y, 120, 75);
+
+    if (distToTable < 20) {
+      document.getElementById("dialogue-text").innerText =
+        "Walk into the table to eat.";
+
+      // If they physically touch the table, trigger interaction
+      if (distToTable < 10) {
+        triggerInteraction("BOWL");
+      }
+    } else {
+      document.getElementById("dialogue-text").innerText =
+        "Use Arrow Keys to explore.";
     }
-    l.update();
-  }
-
-  if (player.y - player.r > level.deathY) {
-    loadLevel(levelIndex);
-    return;
-  }
-
-  cam.followSideScrollerX(player.x, level.camLerp);
-  cam.clampToWorld(level.w, level.h);
-
-  drawGradientBackground();
-
-  cam.begin();
-  level.drawWorld();
-  player.draw(level.theme.blob);
-  for (let l of level.letters) l.drawWorld();
-  cam.end();
-
-  if (showSkyLetters) {
-    for (let l of level.letters) l.drawSky();
-  }
-
-  if (collectedCount === level.letters.length && !finalFormed) {
-    triggerFinalSequence();
-  }
-
-  if (finalFormed) {
-    cinematicTimer++;
-    drawFinalWord();
-  }
-
-  drawInstructions();
-}
-
-function triggerFinalSequence() {
-  finalFormed = true;
-  showSkyLetters = false; // clear individual letters
-}
-
-function drawGradientBackground() {
-  const top = color(level.theme.bgTop);
-  const bottom = color(level.theme.bgBottom);
-
-  for (let y = 0; y < height; y++) {
-    const inter = map(y, 0, height, 0, 1);
-    const c = lerpColor(top, bottom, inter);
-    stroke(c);
-    line(0, y, width, y);
   }
 }
 
-function assignSkyPositions() {
-  const total = level.letters.length;
-  const spacing = width / (total + 1);
+// --- INTERACTION SYSTEM ---
 
-  for (let i = 0; i < total; i++) {
-    level.letters[i].skyX = spacing * (i + 1);
-    level.letters[i].skyY = 100;
+function triggerInteraction(itemName) {
+  gameState = "INTERACT";
+  currentInteraction = itemName;
+
+  // Update HTML UI
+  document.getElementById("dialogue-text").innerText = "Eat food?";
+  document.getElementById("options-container").style.display = "flex";
+}
+
+function drawCloseUpItem() {
+  background("#ECE7D1");
+
+  if (currentInteraction === "BOWL") {
+    // Draw the giant pixel bowl
+    fill("#8E977D");
+    arc(80, 72, 120, 80, 0, PI); // Bottom half of bowl
+    fill("#DBCEA5");
+    ellipse(80, 72, 120, 30); // Top rim of bowl
   }
 }
 
-function drawFinalWord() {
-  push();
-  textAlign(CENTER, CENTER);
-  textSize(80);
-
-  let fade = min(cinematicTimer * 5, 255);
-  fill(255, fade);
-
-  drawingContext.shadowBlur = 40;
-  drawingContext.shadowColor = "rgba(255,255,255,1)";
-
-  text("COURAGE", width / 2, height / 2);
-
-  drawingContext.shadowBlur = 0;
-  pop();
-}
-
-function drawInstructions() {
-  push();
-  fill(255, 180);
-  textSize(14);
-  textAlign(LEFT);
-
-  text("Move: A/D or ← →", 20, 30);
-  text("Jump: W / ↑ / Space", 20, 48);
-  text("Collect letters to form a word.", 20, 66);
-
-  pop();
-}
-
-function keyPressed() {
-  if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
-    player.tryJump();
+// Called directly from the HTML buttons
+function handleChoice(choice) {
+  if (choice === "yes") {
+    document.getElementById("dialogue-text").innerText =
+      "You ate the food. It tasted familiar.";
+  } else {
+    document.getElementById("dialogue-text").innerText =
+      "You pushed the bowl away.";
   }
-  if (key === "r" || key === "R") loadLevel(levelIndex);
+
+  // Hide buttons and return to game
+  document.getElementById("options-container").style.display = "none";
+
+  // Push player slightly back so they don't re-trigger immediately
+  player.x -= 15;
+  gameState = "EXPLORE";
 }
