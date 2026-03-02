@@ -1,48 +1,85 @@
-## Project Title
+# Before I Forget
 
-GBDA302 Week 4 Side Quest: Spot the Different Tile
+## Group Number
 
----
+Group 9B
 
 ## Authors
 
-Annora Zhu
+Annora Zhu, Tracey Chen, Lynette Shen, Rini Lu, Kiki Tan
 
 ---
 
 ## Description
 
-This sketch is a small perception-based game built using p5.js and external JSON data.
-Each level displays a grid of tiles where all tiles share the same color except for one tile with a slightly different color. The player’s goal is to identify and click the different tile. Successfully selecting the correct tile advances the game to the next level automatically, while selecting the wrong tile results in a failure state. Completing the final level displays a win message, and the game can be reset using keyboard input.
+*Before I Forget* is a 2D narrative exploration game built with p5.js that invites players to experience the early stages of dementia from a first-person perspective. The player controls an elderly character navigating their daily routine inside a small apartment — moving through the bedroom, kitchen, living room, and front door — across repeating "days" that gradually shift in subtle but unsettling ways.
+
+The game is structured around the concept of "The Same Day, Again." Each day follows the same spatial loop, but the player's perception of the environment changes as cognitive symptoms worsen. On Day 1, everything feels warm and familiar — the alarm clock reads 7:00, the tea canister clearly says "TEA," and the newspaper is fully readable. By Day 3, letters begin to disappear from text, the mirror reflection delays by a fraction of a second, and the apartment door number shifts from "204" to "20?" — while a neighbor calmly insists it has always been 204.
+
+The core mechanics are designed to simulate specific aspects of dementia rather than gamify the condition:
+
+- **Text Recognition Breakdown**: Newspaper headlines and labels progressively lose letters, forcing the player to piece together meaning from incomplete information — reflecting the real experience of visual agnosia and reading difficulty in dementia.
+- **Mirror Delay and Identity Drift**: The player's mirror reflection begins to lag behind their movements and gradually ages, representing the disconnect between self-perception and physical reality that many dementia patients describe.
+- **Choice-Based Micro Interactions**: When interacting with objects like the tea canister, players can choose to "look closer" or dismiss changes. Choosing to look closer triggers additional distortion effects, simulating the anxiety of trying to make sense of a familiar world that no longer feels familiar.
+
+The game intentionally avoids jump scares, horror tropes, or pity-driven framing. All distortions are gradual, quiet, and grounded in documented experiences of dementia. NPC dialogue (from a spouse and a neighbor) remains calm and warm throughout, creating a deliberate contrast between the player's internal confusion and the external world's normalcy — a dynamic commonly reported by people living with early-stage dementia.
+
+Our design draws on research into the lived experiences of dementia patients and caregivers, with a focus on fostering empathy through embodied mechanics rather than educational text. The goal is not to teach players facts about dementia, but to let them feel — even briefly — what it might be like when the world you know begins to quietly come apart.
 
 ---
 
-## Learning Goals
+## Setup and Interaction Instructions
 
-This project demonstrates the following learning goals:
+1. Open the game via the GitHub Pages link in Google Chrome.
+2. Use **WASD** keys to move the character left and right through rooms.
+3. Look for the flashing **"!"** icon above interactive objects.
+4. Press **E** to interact with an object (opens a zoomed-in panel).
+5. Press **SPACE** to close the panel.
+6. On Day 3, some interactions will present choice buttons — click to select.
+7. Walk to the front door and press **E** to end the current day and advance.
 
-- Using preload() and loadJSON() to ensure external data is available before setup() runs.
+---
 
-- Using JSON as a data source to define level parameters such as grid size and difficulty.
+## Iteration Notes
 
-- Dynamically generating game levels using nested loops instead of hard-coded positions.
+### Post-Playtest
 
-- Designing increasing difficulty across levels through data-driven changes (larger grids and subtler color differences).
+*(To be filled after the Week 6 playtesting session)*
 
-- Implementing automatic level progression based on game state rather than manual input.
+1. [Change 1 based on playtesting feedback]
+2. [Change 2 based on playtesting feedback]
+3. [Change 3 based on playtesting feedback]
 
-- Managing basic game states (playing, win, fail) and user feedback.
+### Post-Showcase
+
+*(To be filled after the Mid-Term Showcase)*
+
+1. [Planned improvement 1]
+2. [Planned improvement 2]
 
 ---
 
 ## Assets
 
-N/A
+*(List and attribute all non-original assets with in-text citations here)*
+
+- Pixel art room backgrounds — [Source / Attribution]
+- Alarm clock sprite — [Source / Attribution]
+- Character sprites — [Source / Attribution]
+- Background music — [Source / Attribution]
 
 ---
 
 ## GenAI
 
-Generative AI was used as a development aid for debugging, restructuring logic, and refining code clarity during the creation of this project. All final design decisions, gameplay mechanics, and implementations were reviewed and adapted by the author.
+Generative AI was used as a development aid for brainstorming game mechanics, debugging, restructuring logic, refining code clarity, and exploring role distribution during the creation of this project. All final design decisions, gameplay mechanics, narrative content, and implementations were reviewed and adapted by the team.
 
 ---
+
+## References
+
+*(Full reference list in ACM format, connected to in-code and in-text citations)*
+
+1. [Reference 1]
+2. [Reference 2]
+3. [Reference 3]
