@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Before I Forget - Prototype</title>
+    <title>Before I Forget - Day 1 Prototype</title>
     <link rel="stylesheet" href="style.css" />
+
     <script src="libraries/p5.min.js"></script>
   </head>
   <body>
@@ -17,17 +18,14 @@
         </div>
         <div id="dialogue-container">
           <p id="dialogue-text">
-            Use Arrow Keys to move. Walk into items to interact.
+            Use WASD or Arrows to move. Approach '!' and press 'E'.
           </p>
-        </div>
-        <div id="options-container" style="display: none">
-          <button id="btn-yes" onclick="handleChoice('yes')">YES</button>
-          <button id="btn-no" onclick="handleChoice('no')">NO</button>
         </div>
       </div>
     </div>
 
     <script src="src/WorldLevel.js"></script>
+    <script src="src/Player.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>

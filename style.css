@@ -12,22 +12,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 600px; /* Gameboy-esque width */
+  width: 800px;
 }
 
 #canvas-holder canvas {
-  width: 600px !important;
-  height: 540px !important; /* Scaled from 160x144 */
+  width: 800px !important;
+  height: 450px !important;
   image-rendering: pixelated;
-  border: 8px solid #8a7650; /* Palette: Dark Wood */
+  border: 8px solid #8a7650;
   border-bottom: none;
   display: block;
 }
 
 #chat-box {
   width: 100%;
-  height: 140px;
-  background-color: #ece7d1; /* Palette: Light Cream */
+  height: 120px;
+  background-color: #ece7d1;
   border: 8px solid #8a7650;
   padding: 15px;
   box-sizing: border-box;
@@ -36,26 +36,13 @@ body {
 
 #npc-name {
   font-weight: bold;
-  color: #8e977d; /* Palette: Grey-Green */
+  color: #8e977d;
   border-bottom: 2px solid #dbcea5;
-}
-
-#options-container {
-  margin-top: 15px;
-  display: flex;
-  justify-content: space-around;
-}
-
-#options-container button {
-  background-color: #8e977d;
-  color: #ece7d1;
-  border: 4px solid #8a7650;
-  padding: 10px 30px;
   font-size: 18px;
-  font-family: "Courier New", Courier, monospace;
-  cursor: pointer;
 }
 
-#options-container button:hover {
-  background-color: #8a7650;
+#dialogue-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 10px;
 }

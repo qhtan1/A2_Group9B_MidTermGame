@@ -1,26 +1,18 @@
 class WorldLevel {
   constructor() {
-    this.rooms = ["LivingRoom", "Bathroom"];
-    this.currentRoomIndex = 0;
     this.currentDay = 1;
+    this.currentRoom = "Bedroom";
+
+    // Day 1 Guided Path Sequence:
+    // 0: Alarm -> 1: Mirror -> 2: Bed Door -> 3: Tea -> 4: Newspaper -> 5: Main Door -> 6: Doorplate
+    this.sequenceStep = 0;
   }
 
-  getCurrentRoom() {
-    return this.rooms[this.currentRoomIndex];
+  advanceSequence() {
+    this.sequenceStep++;
   }
 
-  // Top-down room switching logic
-  checkDoorways(playerX, playerY, width, height) {
-    // Walk off the right screen to go to the Bathroom
-    if (playerX > width && this.currentRoomIndex === 0) {
-      this.currentRoomIndex = 1;
-      return { x: 10, y: playerY };
-    }
-    // Walk off the left screen to return to Living Room
-    if (playerX < 0 && this.currentRoomIndex === 1) {
-      this.currentRoomIndex = 0;
-      return { x: width - 10, y: playerY };
-    }
-    return { x: playerX, y: playerY };
+  changeRoom(newRoom) {
+    this.currentRoom = newRoom;
   }
 }
