@@ -145,11 +145,12 @@ function preload() {
   uiImages.day3[8] = loadImage("assets/ui_door204_day3.png");
   uiImages.day3[9] = loadImage("assets/ui_neighbor.png");
 
+  // 🚨 注意这里的后缀全部改成了大写 .PNG 🚨
   for (let i = 1; i <= 3; i++) {
-    playerSprites.down.push(loadImage(`assets/Front${i}.png`));
-    playerSprites.up.push(loadImage(`assets/Back${i}.png`));
-    playerSprites.left.push(loadImage(`assets/Left${i}.png`));
-    playerSprites.right.push(loadImage(`assets/Right${i}.png`));
+    playerSprites.down.push(loadImage(`assets/Front${i}.PNG`));
+    playerSprites.up.push(loadImage(`assets/Back${i}.PNG`));
+    playerSprites.left.push(loadImage(`assets/Left${i}.PNG`));
+    playerSprites.right.push(loadImage(`assets/Right${i}.PNG`));
   }
 }
 
