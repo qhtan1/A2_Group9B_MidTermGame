@@ -6,44 +6,39 @@ let activeTarget = null;
 let bgImages = {};
 let uiImages = {};
 
+let playerSprites = {
+  down: [],
+  up: [],
+  left: [],
+  right: [],
+};
+
 // --- DEBUG OPTION ---
-let showDebug = true;
+let showDebug = false; // 改回 false，画面更干净
 
 // --- Hitboxes (Collision Bounds) ---
 const roomObstacles = {
   Bedroom: [
-    { x: 0, y: 0, w: 320, h: 70 },
+    { x: 0, y: 0, w: 320, h: 75 },
     { x: 40, y: 55, w: 60, h: 65 },
     { x: 185, y: 55, w: 42, h: 35 },
     { x: 10, y: 55, w: 20, h: 30 },
     { x: 260, y: 55, w: 60, h: 40 },
   ],
-
   Kitchen: [
-    { x: 0, y: 0, w: 320, h: 55 },
+    { x: 0, y: 0, w: 320, h: 75 },
     { x: 0, y: 115, w: 130, h: 65 },
     { x: 190, y: 110, w: 40, h: 30 },
-    { x: 260, y: 55, w: 60, h: 80 },
+    { x: 260, y: 55, w: 60, h: 40 },
+    { x: 230, y: 78, w: 20, h: 70 }, // 老奶防撞
   ],
-
-  // ✅ FIXED LIVING ROOM COLLISION
   LivingRoom: [
-    // Back cabinet + wall objects
-    { x: 0, y: 0, w: 320, h: 55 },
-
-    // Grandfather clock (left)
+    { x: 0, y: 0, w: 320, h: 75 },
     { x: 0, y: 55, w: 38, h: 110 },
-
-    // Sofa body
-    { x: 210, y: 55, w: 95, h: 80 },
-
-    // Coffee table
-    { x: 190, y: 120, w: 90, h: 40 },
-
-    // Right armchair
-    { x: 300, y: 95, w: 40, h: 85 },
+    { x: 210, y: 55, w: 95, h: 40 },
+    { x: 190, y: 120, w: 70, h: 30 },
+    { x: 280, y: 55, w: 80, h: 120 },
   ],
-
   Outside: [{ x: 0, y: 0, w: 320, h: 75 }],
 };
 
@@ -93,19 +88,30 @@ const items = [
   {
     step: 6,
     room: "LivingRoom",
+    x: 240,
+    y: 90,
+    name: "Partner",
+    type: "popup",
+  },
+  {
+    step: 7,
+    room: "LivingRoom",
     x: 155,
     y: 65,
     name: "Main Door",
     type: "door",
   },
+
+  // ⬇️ 拆分后的门外互动步骤 ⬇️
   {
-    step: 7,
+    step: 8,
     room: "Outside",
-    x: 160,
+    x: 130,
     y: 80,
     name: "Doorplate 204",
     type: "popup",
-  },
+  }, // 先看门牌
+  { step: 9, room: "Outside", x: 220, y: 85, name: "Neighbor", type: "popup" }, // 再和邻居互动
 ];
 
 function preload() {
@@ -118,7 +124,18 @@ function preload() {
   uiImages[1] = loadImage("assets/ui_mirror.png");
   uiImages[3] = loadImage("assets/ui_tea.png");
   uiImages[5] = loadImage("assets/ui_news.png");
-  uiImages[7] = loadImage("assets/ui_door204.png");
+  uiImages[6] = loadImage("assets/ui_partner.png");
+  uiImages[8] = loadImage("assets/ui_door204.png");
+
+  // ⬇️ 加载邻居的图片 ⬇️
+  uiImages[9] = loadImage("assets/ui_neighbor.png");
+
+  for (let i = 1; i <= 3; i++) {
+    playerSprites.down.push(loadImage(`assets/Front${i}.png`));
+    playerSprites.up.push(loadImage(`assets/Back${i}.png`));
+    playerSprites.left.push(loadImage(`assets/Left${i}.png`));
+    playerSprites.right.push(loadImage(`assets/Right${i}.png`));
+  }
 }
 
 function setup() {
@@ -212,9 +229,10 @@ function drawUIPopup() {
 function processSequence() {
   gameState = "TRANSITION";
 
-  if (world.sequenceStep === 7) {
-    document.getElementById("npc-name").innerText = "Neighbor";
-    document.getElementById("dialogue-text").innerText = "Good morning.";
+  // ⬇️ 更新为 Step 9 (邻居对话结束后) 切入 Day 3 ⬇️
+  if (world.sequenceStep === 9) {
+    document.getElementById("npc-name").innerText = "System";
+    document.getElementById("dialogue-text").innerText = "Walking away...";
     setTimeout(() => advanceDayToNext(), 2000);
     return;
   }
@@ -229,7 +247,7 @@ function processSequence() {
     world.changeRoom("LivingRoom");
     player.x = 155;
     player.y = 80;
-  } else if (world.sequenceStep === 7) {
+  } else if (world.sequenceStep === 8) {
     world.changeRoom("Outside");
     player.x = 160;
     player.y = 120;
@@ -256,16 +274,25 @@ function updateDialogueForStep(step) {
     uiText.innerText = "It's me.";
   }
   if (step === 3) {
-    npcName.innerText = "Partner";
-    uiText.innerText = "Good morning.";
+    npcName.innerText = "System";
+    uiText.innerText = "A familiar tea canister.";
   }
   if (step === 5) {
+    npcName.innerText = "System";
+    uiText.innerText = "Today's newspaper.";
+  }
+  if (step === 6) {
     npcName.innerText = "Partner";
     uiText.innerText = "How are you feeling today?";
   }
-  if (step === 7) {
+  if (step === 8) {
     npcName.innerText = "System";
     uiText.innerText = "Apartment 204.";
+  }
+  if (step === 9) {
+    // ⬇️ 邻居的对话 ⬇️
+    npcName.innerText = "Neighbor";
+    uiText.innerText = "Good morning.";
   }
 }
 
