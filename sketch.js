@@ -19,7 +19,7 @@ let playerSprites = {
 };
 
 // --- DEBUG OPTION ---
-let showDebug = true;
+let showDebug = false;
 
 // --- Day 3 特殊状态变量 ---
 let teaChoiceMade = false;
