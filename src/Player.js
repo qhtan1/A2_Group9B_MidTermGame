@@ -30,8 +30,8 @@ class Player {
 
     if (currentImg) {
       // 老爷爷的图片素材比物理碰撞箱（20x20）大，进行视觉居中并向上对齐
-      let drawW = 30; // 绘制的图片宽度
-      let drawH = 45; // 绘制的图片高度
+      let drawW = 40; // 绘制的图片宽度
+      let drawH = 55; // 绘制的图片高度
 
       // X轴居中，Y轴向上提，确保老爷爷的脚底踩在 20x20 碰撞箱的最底端
       let drawX = this.x + this.w / 2 - drawW / 2;
