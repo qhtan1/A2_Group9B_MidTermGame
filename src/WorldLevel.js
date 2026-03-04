@@ -1,12 +1,7 @@
 class WorldLevel {
   constructor() {
-    this.currentDay = 1;
+    this.currentDay = 1; // 1 = Day 1, 3 = Day 3
     this.currentRoom = "Bedroom";
-
-    // Day 1 Sequence Updated:
-    // 0: Alarm -> 1: Mirror -> 2: Bedroom Door ->
-    // 3: Tea -> 4: Kitchen Door (Exit to Living Room) ->
-    // 5: Newspaper -> 6: Main Door -> 7: Doorplate
     this.sequenceStep = 0;
   }
 
@@ -16,5 +11,12 @@ class WorldLevel {
 
   changeRoom(newRoom) {
     this.currentRoom = newRoom;
+  }
+
+  // 核心功能：重置到新的一天
+  resetForNextDay(dayNumber) {
+    this.currentDay = dayNumber;
+    this.currentRoom = "Bedroom";
+    this.sequenceStep = 0; // 从头开始起床
   }
 }
