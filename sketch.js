@@ -197,9 +197,9 @@ function checkInteractions() {
   if (activeTarget) {
     let bob = sin(frameCount * 0.15) * 3;
 
-    fill("#B97A6A");
+    fill("#FF0000");
     textAlign(CENTER);
-    textSize(16);
+    textSize(20);
     text("!", activeTarget.x, activeTarget.y - 20 + bob);
 
     if (dist(player.x, player.y, activeTarget.x, activeTarget.y) < 45) {
