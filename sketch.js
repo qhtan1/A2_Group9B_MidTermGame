@@ -125,7 +125,7 @@ function preload() {
   bgImages.Bedroom = loadImage("assets/bg_bedroom.png");
   bgImages.Kitchen = loadImage("assets/bg_kitchen.png");
   bgImages.LivingRoom = loadImage("assets/bg_livingroom.png");
-  bgImages.Outside = loadImage("assets/bg_outside.png");
+  bgImages.Outside = loadImage("assets/bg_outside.jpg");
 
   // --- Day 1 图片 ---
   uiImages.day1[0] = loadImage("assets/ui_clock.png");
