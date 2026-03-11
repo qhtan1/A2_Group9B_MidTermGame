@@ -13,20 +13,86 @@
 
       <div id="canvas-holder"></div>
 
+      <div id="timer-panel">
+        <div id="timer-display">03:00</div>
+        <div id="timer-label">TIMER</div>
+      </div>
+
+      <div id="checklist-panel">
+        <div id="checklist-title">Routine</div>
+        <div id="checklist-items">
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Check alarm</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Look mirror</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Brew tea</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Read news</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Talk partner</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Door number</span>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" disabled />
+            <span>Greet neighbor</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="attention-panel">
+        <div id="attention-title">Attention Level</div>
+        <div id="attention-bar">
+          <div class="attention-segment active"></div>
+          <div class="attention-segment active"></div>
+          <div class="attention-segment active"></div>
+        </div>
+        <div id="attention-icon">☕</div>
+      </div>
+
+      <div id="interaction-hint"></div>
+
       <div id="chat-box">
         <div id="npc-header">
           <span id="npc-name">System</span>
         </div>
         <div id="dialogue-container">
           <p id="dialogue-text">
-            Use WASD or Arrows to move. Approach '!' and press 'E'.
+            Use WASD or Arrows to move. Approach objects and press 'E'.
           </p>
+        </div>
+      </div>
+
+      <!-- Observation UI Modal -->
+      <div id="observation-modal" style="display: none">
+        <div id="observation-content">
+          <div id="observation-image"></div>
+          <div id="observation-prompt">Does something look wrong?</div>
+          <div id="observation-buttons">
+            <button id="btn-something-wrong">Something is wrong</button>
+            <button id="btn-looks-normal">Looks normal</button>
+          </div>
         </div>
       </div>
     </div>
 
     <script src="src/WorldLevel.js"></script>
     <script src="src/Player.js"></script>
+    <script src="src/ChecklistManager.js"></script>
+    <script src="src/TimerSystem.js"></script>
+    <script src="src/AttentionSystem.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>

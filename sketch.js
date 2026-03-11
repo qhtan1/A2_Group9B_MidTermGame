@@ -3,6 +3,11 @@ let player;
 let gameState = "EXPLORE";
 let activeTarget = null;
 
+// --- New Systems ---
+let checklist;
+let timerSystem;
+let attentionSystem;
+
 let bgImages = {};
 
 // 嵌套对象，区分 Day 1 和 Day 3 的图片
@@ -169,6 +174,11 @@ function setup() {
 
   world = new WorldLevel();
   player = new Player(150, 130, 20, 20);
+
+  // Initialize new systems
+  checklist = new ChecklistManager();
+  timerSystem = new TimerSystem();
+  attentionSystem = new AttentionSystem();
 }
 
 function draw() {
@@ -189,6 +199,33 @@ function draw() {
   } else if (gameState === "TRANSITION") {
     background(0);
   }
+
+  // Update all systems
+  timerSystem.update();
+  attentionSystem.update();
+
+  // Draw UI overlays (on top of game canvas)
+  push();
+  // Drawing in screen space, not game space
+  scale(width / 320, height / 180); // Match canvas internal resolution for consistent positioning
+
+  // Draw timer (top-left)
+  if (timerSystem.getIsActive()) {
+    timerSystem.draw();
+  }
+
+  // Draw checklist (left side) - always visible
+  checklist.draw();
+
+  // Draw attention system (top-right)
+  attentionSystem.draw();
+
+  pop();
+
+  // Check if timer expired
+  if (timerSystem.hasExpired() && timerSystem.getIsActive()) {
+    handleGameOver("time");
+  }
 }
 
 function drawBackground() {
@@ -202,21 +239,28 @@ function checkInteractions() {
     (i) => i.step === world.sequenceStep && i.room === world.currentRoom,
   );
 
+  let hintElement = document.getElementById("interaction-hint");
+
   if (activeTarget) {
-    let bob = sin(frameCount * 0.15) * 3;
+    let distance = dist(player.x, player.y, activeTarget.x, activeTarget.y);
 
-    fill("#FF0000");
-    textAlign(CENTER);
-    textSize(20);
-    text("!", activeTarget.x, activeTarget.y - 20 + bob);
+    if (distance < 45) {
+      // Show interaction hint
+      hintElement.textContent = "Press E to interact";
+      hintElement.classList.add("show");
 
-    if (dist(player.x, player.y, activeTarget.x, activeTarget.y) < 45) {
       document.getElementById("dialogue-text").innerText =
         "Press 'E' to interact.";
     } else {
+      // Hide interaction hint
+      hintElement.classList.remove("show");
+
       document.getElementById("dialogue-text").innerText =
         "Use WASD or Arrows to explore.";
     }
+  } else {
+    // No active target
+    hintElement.classList.remove("show");
   }
 }
 
@@ -225,20 +269,39 @@ function keyPressed() {
     if (dist(player.x, player.y, activeTarget.x, activeTarget.y) < 45) {
       if (activeTarget.type === "popup") {
         gameState = "INTERACT";
-        // 重置茶罐选择状态
+
+        // Start timer on first interaction (alarm clock)
+        if (world.sequenceStep === 0) {
+          timerSystem.start();
+        }
+
+        // Mark task as complete
+        checklist.markTaskComplete(world.sequenceStep);
+
+        // Reset tea choice state if applicable
         if (world.currentDay === 3 && world.sequenceStep === 3) {
           teaChoiceMade = false;
           isDistorted = false;
         }
+
         updateDialogueForStep(world.sequenceStep);
       } else {
+        // Door interaction
+        if (!checklist.canLeaveApartment() && world.sequenceStep === 7) {
+          // Not enough tasks completed - prevent door transition
+          document.getElementById("npc-name").innerText = "System";
+          document.getElementById("dialogue-text").innerText =
+            `Complete at least ${checklist.minTasksRequired} tasks before leaving. (${checklist.getCompletedCount()}/${checklist.minTasksRequired})`;
+          return;
+        }
+
         processSequence();
       }
     }
   }
 
   if (gameState === "INTERACT") {
-    // 茶罐的分支选择拦截
+    // Tea choice logic for Day 3
     if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
       if (keyCode === 49) {
         // 1: It's fine
@@ -247,9 +310,21 @@ function keyPressed() {
       } else if (keyCode === 50) {
         // 2: Look closer
         teaChoiceMade = true;
-        isDistorted = true; // 开启抖动
+        isDistorted = true;
         document.getElementById("dialogue-text").innerText =
           "It's... hard to focus...";
+
+        // Decrease attention on wrong choice
+        let levelChanged = attentionSystem.decrease(20);
+        if (levelChanged) {
+          let msg = attentionSystem.getWarningMessage(
+            attentionSystem.getLevel(),
+          );
+          setTimeout(() => {
+            document.getElementById("dialogue-text").innerText = msg;
+          }, 500);
+        }
+
         setTimeout(() => {
           isDistorted = false;
           processSequence();
@@ -258,7 +333,7 @@ function keyPressed() {
       return;
     }
 
-    // 常规空格键关闭
+    // Normal space key to close
     if (keyCode === 32) {
       processSequence();
     }
@@ -400,7 +475,6 @@ function updateDialogueForStep(step) {
   }
 }
 
-// 🚨 使用了你刚刚要求更新的版本 🚨
 function advanceDayToNext() {
   document.body.style.backgroundColor = "black";
   document.getElementById("npc-name").innerText = "System";
@@ -420,7 +494,15 @@ function advanceDayToNext() {
         player.y = 130;
         gameState = "EXPLORE";
 
-        // 🚨 更新 HTML 里的顶部标题 🚨
+        // Reset systems for new day
+        checklist.reset();
+        timerSystem.reset();
+        if (world.currentDay === 3) {
+          timerSystem.enableDistortion();
+        }
+        attentionSystem.reset();
+
+        // Update HTML day display
         document.getElementById("day-display").innerText = "Day 3";
 
         document.getElementById("npc-name").innerText = "System";
