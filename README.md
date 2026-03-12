@@ -138,4 +138,6 @@ GenAI outputs were treated as development assistance rather than final solutions
 
 ## References
 
-- World Health Organization. *Dementia*. 2023.
+World Health Organization. 2023. *Dementia*.  
+World Health Organization.  
+https://www.who.int/news-room/fact-sheets/detail/dementia
