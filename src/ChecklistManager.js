@@ -67,14 +67,6 @@ class ChecklistManager {
   }
 
   /**
-   * Reset checklist for new day
-   */
-  reset() {
-    this.completedSteps.clear();
-    this.updateHTMLPanel();
-  }
-
-  /**
    * Update the HTML checklist panel to reflect current state
    */
   updateHTMLPanel() {

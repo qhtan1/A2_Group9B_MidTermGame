@@ -26,6 +26,72 @@ let playerSprites = {
 // --- DEBUG OPTION ---
 let showDebug = false;
 
+// --- ADMIN / DEV MODE ---
+// Toggle with backtick (`). When OFF, no dev controls are available.
+let adminMode = false;
+
+// Room and player position lookup per sequence step
+const stepRoomMap = {
+  0: "Bedroom", 1: "Bedroom", 2: "Bedroom",
+  3: "Kitchen", 4: "Kitchen",
+  5: "LivingRoom", 6: "LivingRoom", 7: "LivingRoom",
+  8: "Outside", 9: "Outside",
+};
+const stepPlayerPos = {
+  0: { x: 150, y: 130 }, 1: { x: 150, y: 130 }, 2: { x: 150, y: 130 },
+  3: { x: 160, y: 80 },  4: { x: 160, y: 80 },
+  5: { x: 155, y: 80 },  6: { x: 155, y: 80 },  7: { x: 155, y: 80 },
+  8: { x: 160, y: 120 }, 9: { x: 160, y: 120 },
+};
+
+/**
+ * Admin: jump to any sequence step within the current day
+ */
+function adminJumpToStep(step) {
+  step = constrain(step, 0, 9);
+  world.sequenceStep = step;
+  world.currentRoom = stepRoomMap[step];
+  player.x = stepPlayerPos[step].x;
+  player.y = stepPlayerPos[step].y;
+  gameState = "EXPLORE";
+  isWaitingForObservationChoice = false;
+  teaChoiceMade = false;
+  isDistorted = false;
+
+  const modal = document.getElementById("observation-modal");
+  if (modal) modal.classList.remove("show");
+
+  document.getElementById("npc-name").innerText = "[ADMIN]";
+  document.getElementById("dialogue-text").innerText =
+    `Jumped to step ${step} — ${world.currentRoom} (Day ${world.currentDay})`;
+}
+
+/**
+ * Admin: jump to a specific day, resets everything
+ */
+function adminJumpToDay(day) {
+  world.resetForNextDay(day);
+  player.x = 150;
+  player.y = 130;
+  gameState = "EXPLORE";
+  checklist.reset();
+  timerSystem.reset();
+  attentionSystem.reset();
+  teaChoiceMade = false;
+  isDistorted = false;
+  isWaitingForObservationChoice = false;
+
+  const modal = document.getElementById("observation-modal");
+  if (modal) modal.classList.remove("show");
+
+  if (day === 3) timerSystem.enableDistortion();
+
+  document.getElementById("day-display").innerText = "Day " + day;
+  document.getElementById("npc-name").innerText = "[ADMIN]";
+  document.getElementById("dialogue-text").innerText =
+    `Jumped to Day ${day} — start of day`;
+}
+
 // --- Day 3 特殊状态变量 ---
 let teaChoiceMade = false;
 let isDistorted = false;
@@ -71,14 +137,7 @@ function handleObservationChoice(answer) {
     }
   }
 
-  // Close modal
   attentionSystem.dismissObservationUI();
-  const modal = document.getElementById("observation-modal");
-  if (modal) {
-    modal.classList.remove("show");
-    modal.style.display = ""; // Clear inline style to let CSS handle it
-  }
-
   isWaitingForObservationChoice = false;
 
   // Continue to next sequence step after a brief delay
@@ -237,35 +296,6 @@ function setup() {
   timerSystem = new TimerSystem();
   attentionSystem = new AttentionSystem();
 
-  // Set up observation modal button listeners with a small delay to ensure DOM is ready
-  setTimeout(() => {
-    const btnWrong = document.getElementById("btn-something-wrong");
-    const btnNormal = document.getElementById("btn-looks-normal");
-
-    console.log("✓ Setting up event listeners on buttons");
-    console.log("  btn-something-wrong found:", btnWrong !== null);
-    console.log("  btn-looks-normal found:", btnNormal !== null);
-
-    if (btnWrong) {
-      btnWrong.addEventListener("click", () => {
-        console.log("🎯 CLICKED: Something is wrong");
-        handleObservationChoice("wrong");
-      });
-      console.log("  ✓ Event listener attached to btn-something-wrong");
-    } else {
-      console.error("❌ btn-something-wrong not found in DOM!");
-    }
-
-    if (btnNormal) {
-      btnNormal.addEventListener("click", () => {
-        console.log("🎯 CLICKED: Looks normal");
-        handleObservationChoice("normal");
-      });
-      console.log("  ✓ Event listener attached to btn-looks-normal");
-    } else {
-      console.error("❌ btn-looks-normal not found in DOM!");
-    }
-  }, 100);
 }
 
 function draw() {
@@ -313,6 +343,11 @@ function draw() {
   // Draw attention system (top-right)
   attentionSystem.draw();
 
+  // Draw admin mode overlay
+  if (adminMode) {
+    drawAdminOverlay();
+  }
+
   pop();
 
   // Reset filter
@@ -340,36 +375,92 @@ function checkInteractions() {
     (i) => i.step === world.sequenceStep && i.room === world.currentRoom,
   );
 
-  let hintElement = document.getElementById("interaction-hint");
-
   if (activeTarget) {
     let distance = dist(player.x, player.y, activeTarget.x, activeTarget.y);
 
     if (distance < 45) {
-      // Show interaction hint
-      hintElement.textContent = "Press E to interact";
-      hintElement.classList.add("show");
-
       document.getElementById("dialogue-text").innerText =
         "Press 'E' to interact.";
     } else {
-      // Hide interaction hint
-      hintElement.classList.remove("show");
-
       document.getElementById("dialogue-text").innerText =
         "Use WASD or Arrows to explore.";
     }
-  } else {
-    // No active target
-    hintElement.classList.remove("show");
   }
 }
 
+function drawAdminOverlay() {
+  // Red badge in bottom-right corner of the canvas
+  let badgeX = 260;
+  let badgeY = 165;
+
+  fill(200, 30, 30, 220);
+  noStroke();
+  rect(badgeX, badgeY, 58, 13, 2);
+
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(6);
+  text("ADMIN  ` toggle", badgeX + 3, badgeY + 2);
+
+  // Hint bar at bottom of canvas
+  fill(0, 0, 0, 160);
+  rect(0, 155, 260, 13);
+
+  fill(255, 220, 100);
+  textAlign(LEFT, TOP);
+  textSize(6);
+  text("[ prev step   ] next step   1 Day1   3 Day3", 4, 158);
+}
+
 function keyPressed() {
+  // --- ADMIN TOGGLE: backtick (`) ---
+  if (keyCode === 192) {
+    adminMode = !adminMode;
+    document.getElementById("npc-name").innerText = "[ADMIN]";
+    document.getElementById("dialogue-text").innerText =
+      adminMode
+        ? "Admin mode ON — [ prev step, ] next step, 1 = Day 1, 3 = Day 3"
+        : "Admin mode OFF";
+    return;
+  }
+
+  // --- ADMIN CONTROLS (only when admin mode is active) ---
+  if (adminMode) {
+    // [ = go back one step
+    if (keyCode === 219) {
+      adminJumpToStep(world.sequenceStep - 1);
+      return;
+    }
+    // ] = go forward one step
+    if (keyCode === 221) {
+      adminJumpToStep(world.sequenceStep + 1);
+      return;
+    }
+    // 1 = jump to Day 1
+    if (keyCode === 49 && gameState !== "INTERACT") {
+      adminJumpToDay(1);
+      return;
+    }
+    // 3 = jump to Day 3
+    if (keyCode === 51 && gameState !== "INTERACT") {
+      adminJumpToDay(3);
+      return;
+    }
+  }
+
   // Handle game over restart
   if (gameState === "GAME_OVER" && keyCode === 82) {
-    // R key to restart
-    advanceDayToNext();
+    // R key to restart from Day 1
+    world.resetForNextDay(1);
+    player.x = 150;
+    player.y = 130;
+    gameState = "EXPLORE";
+    checklist.reset();
+    timerSystem.reset();
+    attentionSystem.reset();
+    document.getElementById("day-display").innerText = "Day 1";
+    document.getElementById("npc-name").innerText = "System";
+    document.getElementById("dialogue-text").innerText = "Use WASD or Arrows to move. Approach objects and press 'E'.";
     return;
   }
 
@@ -393,49 +484,8 @@ function keyPressed() {
         }
 
         // Check if this step requires observation (Day 3 only)
-        if (world.currentDay === 3) {
-          console.log(
-            `[Day 3] Step ${world.sequenceStep} - checking observation...`,
-          );
-          if (attentionSystem.triggerObservationUI(world.sequenceStep)) {
-            // Show observation modal
-            console.log(
-              `[Day 3] ✓ OBSERVATION TRIGGERED for step ${world.sequenceStep}`,
-            );
-            isWaitingForObservationChoice = true;
-            const modal = document.getElementById("observation-modal");
-
-            if (modal) {
-              console.log(
-                `[Modal] Before: classes="${modal.className}", display="${modal.style.display}"`,
-              );
-
-              // Remove the inline style display so CSS class can take over
-              modal.style.display = "";
-
-              // Add the show class to trigger CSS display: flex
-              modal.classList.add("show");
-
-              console.log(
-                `[Modal] After: classes="${modal.className}", display="${modal.style.display}"`,
-              );
-              console.log(`[Modal] Should be visible now!`);
-            } else {
-              console.error("❌ Modal element not found!");
-            }
-
-            // Set modal prompt based on step
-            const prompt = document.getElementById("observation-prompt");
-            if (prompt) {
-              prompt.innerText = "Does something look wrong?";
-            }
-
-            return; // Don't call updateDialogueForStep or show normal popup
-          } else {
-            console.log(
-              `[Day 3] Step ${world.sequenceStep} does not require observation`,
-            );
-          }
+        if (world.currentDay === 3 && attentionSystem.triggerObservationUI(world.sequenceStep)) {
+          isWaitingForObservationChoice = true;
         }
 
         updateDialogueForStep(world.sequenceStep);
@@ -454,12 +504,17 @@ function keyPressed() {
     }
   }
 
-  // Don't allow other interactions while waiting for observation choice
-  if (isWaitingForObservationChoice) {
-    return;
-  }
-
   if (gameState === "INTERACT") {
+    // Observation choice for Day 3 (steps 0, 5, 8)
+    if (isWaitingForObservationChoice) {
+      if (keyCode === 49) {
+        handleObservationChoice("wrong");
+      } else if (keyCode === 50) {
+        handleObservationChoice("normal");
+      }
+      return;
+    }
+
     // Tea choice logic for Day 3
     if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
       if (keyCode === 49) {
@@ -520,7 +575,9 @@ function drawUIPopup() {
   textAlign(CENTER, CENTER);
   textSize(8);
 
-  if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
+  if (isWaitingForObservationChoice) {
+    text("[ 1: Something is wrong   |   2: Looks normal ]", width / 2, height - 10);
+  } else if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
     text("[ 1: It's fine   |   2: Look closer ]", width / 2, height - 10);
   } else {
     text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);

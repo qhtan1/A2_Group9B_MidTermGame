@@ -96,7 +96,7 @@ body {
 }
 
 #interaction-hint.show {
-  display: none !important;
+  display: block !important;
 }
 
 /* --- 计时器面板 --- */
@@ -262,80 +262,3 @@ body {
   opacity: 0.8;
 }
 
-/* --- 观察模态框 --- */
-#observation-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 200;
-}
-
-#observation-modal.show {
-  display: flex;
-}
-
-#observation-content {
-  background-color: #ece7d1;
-  border: 8px solid #8a7650;
-  padding: 20px;
-  border-radius: 4px;
-  max-width: 400px;
-  text-align: center;
-}
-
-#observation-image {
-  width: 320px;
-  height: 180px;
-  background-color: #f0e6d2;
-  border: 2px solid #8a7650;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#observation-image img {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-#observation-prompt {
-  font-size: 16px;
-  font-weight: bold;
-  color: #8a7650;
-  margin-bottom: 15px;
-}
-
-#observation-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-#observation-buttons button {
-  background-color: #8a7650;
-  color: #ece7d1;
-  border: 2px solid #5a5040;
-  padding: 10px 15px;
-  font-size: 14px;
-  font-weight: bold;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: "Courier New", Courier, monospace;
-  transition: all 0.2s;
-}
-
-#observation-buttons button:hover {
-  background-color: #5a5040;
-  transform: scale(1.05);
-}
-
-#observation-buttons button:active {
-  transform: scale(0.95);
-}

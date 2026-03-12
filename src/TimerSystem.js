@@ -69,9 +69,9 @@ class TimerSystem {
     if (this.isDistorted && this.remainingSeconds > 0) {
       let now = millis();
       if (now - this.lastJumpTime > this.jumpInterval) {
-        // Jump forward by 3-5 seconds randomly
+        // Jump forward by 3-5 seconds randomly by shifting startTime back
         let jumpAmount = random(3, 5);
-        this.remainingSeconds = max(0, this.remainingSeconds - jumpAmount);
+        this.startTime -= jumpAmount * 1000;
         this.lastJumpTime = now;
       }
     }

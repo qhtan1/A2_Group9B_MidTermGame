@@ -68,7 +68,6 @@ class AttentionSystem {
    */
   getDescription() {
     let level = this.getLevel();
-    ƒ;
     if (level === "High") return "You are very focused.";
     if (level === "Moderate") return "Your attention is okay.";
     if (level === "Low") return "It's getting harder to focus.";
