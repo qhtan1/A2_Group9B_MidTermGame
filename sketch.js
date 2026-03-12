@@ -1,6 +1,6 @@
 let world;
 let player;
-let gameState = "EXPLORE";
+let gameState = "TITLE";
 let activeTarget = null;
 
 // --- New Systems ---
@@ -314,6 +314,12 @@ function draw() {
   // Day 3 clarity ratio passed to player for glitch + speed effects
   let day3Clarity = (world.currentDay === 3) ? clarityRatio : 1;
 
+  if (gameState === "TITLE") {
+    background(13);
+    drawingContext.filter = "none";
+    return;
+  }
+
   if (gameState === "EXPLORE") {
     drawBackground();
 
@@ -452,6 +458,12 @@ function drawAdminOverlay() {
 }
 
 function keyPressed() {
+  // Title screen — Enter or Space to start
+  if (gameState === "TITLE" && (keyCode === ENTER || keyCode === 32)) {
+    startGame();
+    return;
+  }
+
   // --- ADMIN TOGGLE: backtick (`) ---
   if (keyCode === 192) {
     adminMode = !adminMode;
@@ -760,6 +772,16 @@ function showGameOverScreen() {
   if (gameOverScreenShown) return;
   gameOverScreenShown = true;
   document.getElementById("game-over-screen").classList.add("show");
+}
+
+/**
+ * Start game from title screen (called by Start button and Enter key)
+ */
+function startGame() {
+  const titleScreen = document.getElementById("title-screen");
+  titleScreen.classList.remove("show");
+  titleScreen.classList.add("hide");
+  gameState = "EXPLORE";
 }
 
 /**
