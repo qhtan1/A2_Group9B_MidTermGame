@@ -55,7 +55,6 @@ function adminJumpToStep(step) {
   player.y = stepPlayerPos[step].y;
   gameState = "EXPLORE";
   isWaitingForObservationChoice = false;
-  teaChoiceMade = false;
   isDistorted = false;
 
   const modal = document.getElementById("observation-modal");
@@ -77,7 +76,6 @@ function adminJumpToDay(day) {
   checklist.reset();
   timerSystem.reset();
   attentionSystem.reset();
-  teaChoiceMade = false;
   isDistorted = false;
   isWaitingForObservationChoice = false;
 
@@ -93,9 +91,12 @@ function adminJumpToDay(day) {
 }
 
 // --- Day 3 特殊状态变量 ---
-let teaChoiceMade = false;
 let isDistorted = false;
 let isWaitingForObservationChoice = false;
+
+// --- Game Over animation state ---
+let gameOverAlpha = 0;
+let gameOverScreenShown = false;
 
 /**
  * Handle observation choice result
@@ -125,7 +126,7 @@ function handleObservationChoice(answer) {
     document.getElementById("dialogue-text").innerText =
       "That doesn't seem right...";
 
-    let levelChanged = attentionSystem.decrease(20);
+    let levelChanged = attentionSystem.decrease(34);
     console.log(
       `Attention level changed: ${levelChanged}, new level: ${attentionSystem.getLevel()}`,
     );
@@ -299,38 +300,77 @@ function setup() {
 }
 
 function draw() {
+  // --- Persistent clarity effects (scale 0–1, where 0 = no clarity left) ---
+  let clarityRatio = attentionSystem.currentAttention / attentionSystem.maxAttention;
+  let persistBlur   = map(clarityRatio, 1, 0, 0, 4);   // 0 → 4 px as clarity drops
+  let tempBlur      = attentionSystem.getBlurAmount() * 3;
+  let totalBlur     = persistBlur + tempBlur;
+
+  // Apply combined blur BEFORE drawing game content
+  if (totalBlur > 0) {
+    drawingContext.filter = `blur(${totalBlur}px)`;
+  }
+
+  // Day 3 clarity ratio passed to player for glitch + speed effects
+  let day3Clarity = (world.currentDay === 3) ? clarityRatio : 1;
+
   if (gameState === "EXPLORE") {
     drawBackground();
 
     let obstacles = roomObstacles[world.currentRoom] || [];
-    player.handleMovement(obstacles, width, height);
+    player.handleMovement(obstacles, width, height, day3Clarity);
 
     checkInteractions();
-    player.draw();
+    player.draw(day3Clarity);
 
     if (showDebug) drawDebugBoxes();
   } else if (gameState === "INTERACT") {
     drawBackground();
-    player.draw();
+    player.draw(day3Clarity);
     drawUIPopup();
   } else if (gameState === "TRANSITION") {
     background(0);
+  } else if (gameState === "GAME_OVER") {
+    // Draw shaking scene that collapses into black
+    let shake = map(gameOverAlpha, 0, 255, 10, 0);
+    push();
+    translate(random(-shake, shake), random(-shake, shake));
+    drawBackground();
+    player.draw(day3Clarity);
+    pop();
+
+    // Gradually fade to black
+    gameOverAlpha = min(255, gameOverAlpha + 2.5);
+    fill(0, 0, 0, gameOverAlpha);
+    noStroke();
+    rect(0, 0, width, height);
+
+    // Once fully black, show HTML overlay
+    if (gameOverAlpha >= 255) {
+      showGameOverScreen();
+    }
+    drawingContext.filter = "none";
+    return; // skip UI overlays during collapse
+  }
+
+  // Reset blur so UI panels stay crisp
+  drawingContext.filter = "none";
+
+  // Persistent darkness overlay on the game canvas (beneath UI panels)
+  let darkAlpha = map(clarityRatio, 1, 0, 0, 100);
+  if (darkAlpha > 0) {
+    fill(0, 0, 0, darkAlpha);
+    noStroke();
+    rect(0, 0, width, height);
   }
 
   // Update all systems
   timerSystem.update();
   attentionSystem.update();
 
-  // Apply blur effect based on attention level
-  let blurAmount = attentionSystem.getBlurAmount() * 3;
-  if (blurAmount > 0) {
-    drawingContext.filter = `blur(${blurAmount}px)`;
-  }
-
   // Draw UI overlays (on top of game canvas)
   push();
-  // Drawing in screen space, not game space
-  scale(width / 320, height / 180); // Match canvas internal resolution for consistent positioning
+  scale(width / 320, height / 180);
 
   // Draw timer (top-left)
   if (timerSystem.getIsActive()) {
@@ -350,12 +390,11 @@ function draw() {
 
   pop();
 
-  // Reset filter
-  drawingContext.filter = "none";
-
-  // Check if timer expired
-  if (timerSystem.hasExpired() && timerSystem.getIsActive()) {
-    handleGameOver("time");
+  // Check if 7:45 deadline passed — only fatal if player hasn't left the apartment
+  if (timerSystem.hasExpired() && gameState !== "GAME_OVER") {
+    if (world.sequenceStep < 8) {
+      handleGameOver("time");
+    }
   }
 
   // Check if attention is depleted
@@ -450,17 +489,7 @@ function keyPressed() {
 
   // Handle game over restart
   if (gameState === "GAME_OVER" && keyCode === 82) {
-    // R key to restart from Day 1
-    world.resetForNextDay(1);
-    player.x = 150;
-    player.y = 130;
-    gameState = "EXPLORE";
-    checklist.reset();
-    timerSystem.reset();
-    attentionSystem.reset();
-    document.getElementById("day-display").innerText = "Day 1";
-    document.getElementById("npc-name").innerText = "System";
-    document.getElementById("dialogue-text").innerText = "Use WASD or Arrows to move. Approach objects and press 'E'.";
+    restartGame();
     return;
   }
 
@@ -476,12 +505,6 @@ function keyPressed() {
 
         // Mark task as complete
         checklist.markTaskComplete(world.sequenceStep);
-
-        // Reset tea choice state if applicable
-        if (world.currentDay === 3 && world.sequenceStep === 3) {
-          teaChoiceMade = false;
-          isDistorted = false;
-        }
 
         // Check if this step requires observation (Day 3 only)
         if (world.currentDay === 3 && attentionSystem.triggerObservationUI(world.sequenceStep)) {
@@ -515,38 +538,6 @@ function keyPressed() {
       return;
     }
 
-    // Tea choice logic for Day 3
-    if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
-      if (keyCode === 49) {
-        // 1: It's fine
-        teaChoiceMade = true;
-        processSequence();
-      } else if (keyCode === 50) {
-        // 2: Look closer
-        teaChoiceMade = true;
-        isDistorted = true;
-        document.getElementById("dialogue-text").innerText =
-          "It's... hard to focus...";
-
-        // Decrease attention on wrong choice
-        let levelChanged = attentionSystem.decrease(20);
-        if (levelChanged) {
-          let msg = attentionSystem.getWarningMessage(
-            attentionSystem.getLevel(),
-          );
-          setTimeout(() => {
-            document.getElementById("dialogue-text").innerText = msg;
-          }, 500);
-        }
-
-        setTimeout(() => {
-          isDistorted = false;
-          processSequence();
-        }, 1500);
-      }
-      return;
-    }
-
     // Normal space key to close
     if (keyCode === 32) {
       processSequence();
@@ -569,6 +560,25 @@ function drawUIPopup() {
   if (img) image(img, 0, 0, width, height); // 完美全图覆盖
   pop();
 
+  // Draw 7:45 alarm mark on clock popup (both Day 1 and Day 3)
+  // Minute hand at 45 min points to the "9" position (left side of clock face)
+  // Adjust clockCX/clockCY/clockR if the clock image layout differs
+  if (world.sequenceStep === 0) {
+    const clockCX = 160; // estimated clock center x
+    const clockCY = 82;  // estimated clock center y
+    const clockR  = 42;  // radius to the number ring
+    // "7" on a clock face = 210° from top, clockwise
+    // In p5 coords (east = 0°): subtract 90° → 120°
+    const angle = radians(120);
+    const markX = clockCX + clockR * cos(angle);
+    const markY = clockCY + clockR * sin(angle);
+    push();
+    fill(210, 30, 30);
+    noStroke();
+    ellipse(markX, markY, 8, 8); // red dot near the "7"
+    pop();
+  }
+
   fill(0, 0, 0, 150);
   rect(0, height - 20, width, 20);
   fill("#ECE7D1");
@@ -577,8 +587,6 @@ function drawUIPopup() {
 
   if (isWaitingForObservationChoice) {
     text("[ 1: Something is wrong   |   2: Looks normal ]", width / 2, height - 10);
-  } else if (world.currentDay === 3 && world.sequenceStep === 3 && !teaChoiceMade) {
-    text("[ 1: It's fine   |   2: Look closer ]", width / 2, height - 10);
   } else {
     text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
   }
@@ -608,6 +616,7 @@ function processSequence() {
     world.changeRoom("Outside");
     player.x = 160;
     player.y = 120;
+    timerSystem.stop(); // made it outside in time
   }
 
   setTimeout(() => {
@@ -632,7 +641,7 @@ function updateDialogueForStep(step) {
   if (world.currentDay === 1) {
     if (step === 0) {
       npcName.innerText = "System";
-      uiText.innerText = "7:00 AM.";
+      uiText.innerText = "7:00 AM. I need to leave before 7:45 am for groceries.";
     }
     if (step === 1) {
       npcName.innerText = "System";
@@ -661,7 +670,7 @@ function updateDialogueForStep(step) {
   } else if (world.currentDay === 3) {
     if (step === 0) {
       npcName.innerText = "System";
-      uiText.innerText = "7:00... No, 7:0... I can't read the minutes.";
+      uiText.innerText = "7:00... I need to leave before 7:45 am for groceries.";
     }
     if (step === 1) {
       npcName.innerText = "System";
@@ -669,8 +678,7 @@ function updateDialogueForStep(step) {
     }
     if (step === 3) {
       npcName.innerText = "System";
-      uiText.innerText =
-        "The label looks weird. \n[Press 1] It's fine.  [Press 2] Look closer.";
+      uiText.innerText = "The tea tin... it looks the same as always.";
     }
     if (step === 5) {
       npcName.innerText = "System";
@@ -734,22 +742,48 @@ function advanceDayToNext() {
  * Handle game over conditions (time expiration or attention depleted)
  * @param {string} reason - "time" or "attention"
  */
-function handleGameOver(reason) {
+function handleGameOver(_reason) {
+  if (gameState === "GAME_OVER") return;
   gameState = "GAME_OVER";
+  gameOverAlpha = 0;
+  gameOverScreenShown = false;
   player.velocityX = 0;
   player.velocityY = 0;
+  isWaitingForObservationChoice = false;
+  attentionSystem.dismissObservationUI();
+}
 
-  let npcName = document.getElementById("npc-name");
-  let dialogueText = document.getElementById("dialogue-text");
+/**
+ * Show the HTML game-over overlay once the canvas has faded to black
+ */
+function showGameOverScreen() {
+  if (gameOverScreenShown) return;
+  gameOverScreenShown = true;
+  document.getElementById("game-over-screen").classList.add("show");
+}
 
-  if (reason === "time") {
-    npcName.innerText = "System";
-    dialogueText.innerText =
-      "Out of time. The day is over. Press R to restart.";
-  } else if (reason === "attention") {
-    npcName.innerText = "System";
-    dialogueText.innerText = "You couldn't focus anymore. Press R to restart.";
-  }
+/**
+ * Restart the game from Day 1 (called by the Restart button and R key)
+ */
+function restartGame() {
+  gameOverAlpha = 0;
+  gameOverScreenShown = false;
+  document.getElementById("game-over-screen").classList.remove("show");
+
+  world.resetForNextDay(1);
+  player.x = 150;
+  player.y = 130;
+  gameState = "EXPLORE";
+  checklist.reset();
+  timerSystem.reset();
+  attentionSystem.reset();
+  isDistorted = false;
+  isWaitingForObservationChoice = false;
+
+  document.getElementById("day-display").innerText = "Day 1";
+  document.getElementById("npc-name").innerText = "System";
+  document.getElementById("dialogue-text").innerText =
+    "Use WASD or Arrows to move. Approach objects and press 'E'.";
 }
 
 // --- DEBUG DRAW ---

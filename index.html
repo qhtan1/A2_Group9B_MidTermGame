@@ -14,7 +14,7 @@
       <div id="canvas-holder"></div>
 
       <div id="timer-panel">
-        <div id="timer-display">03:00</div>
+        <div id="timer-display">7:00</div>
         <div id="timer-label">TIMER</div>
       </div>
 
@@ -54,7 +54,7 @@
       </div>
 
       <div id="attention-panel">
-        <div id="attention-title">Attention Level</div>
+        <div id="attention-title">Clarity</div>
         <div id="attention-bar">
           <div class="attention-segment active"></div>
           <div class="attention-segment active"></div>
@@ -74,6 +74,11 @@
         </div>
       </div>
 
+    </div>
+
+    <div id="game-over-screen">
+      <p id="game-over-text">I don't remember anything...</p>
+      <button id="restart-btn" onclick="restartGame()">Restart</button>
     </div>
 
     <script src="src/WorldLevel.js"></script>

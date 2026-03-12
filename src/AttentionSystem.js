@@ -16,14 +16,15 @@ class AttentionSystem {
     this.answeredObservationSteps = new Set();
 
     // Define correct answers for each observation step
-    // 0: Clock - "Something is wrong" is correct
-    // 5: Newspaper - "Something is wrong" is correct
-    // 8: Door number - "Something is wrong" is correct
-    // 3: Tea - "Looks normal" is correct (but not an observation step)
+    // 0: Clock - extra hand → "Something is wrong"
+    // 3: Tea tin - unchanged from Day 1 → "Looks normal"
+    // 5: Newspaper - missing letters → "Something is wrong"
+    // 8: Door sign - incomplete number → "Something is wrong"
     this.correctAnswers = {
-      0: "wrong", // Clock has distortion issues
-      5: "wrong", // Newspaper text shifts
-      8: "wrong", // Door number is wrong (204 but shows "20?")
+      0: "wrong",  // Clock has an extra hand
+      3: "normal", // Tea tin is unchanged — "something is wrong" is the wrong answer
+      5: "wrong",  // Newspaper has missing letters
+      8: "wrong",  // Door sign shows "20?" instead of 204
     };
   }
 
@@ -81,13 +82,13 @@ class AttentionSystem {
    */
   getWarningMessage(newLevel) {
     if (newLevel === "Moderate") {
-      return "It's a bit harder to focus. Would you like to take a short break?";
+      return "It's getting harder to hold on to things...";
     }
     if (newLevel === "Low") {
-      return "Your attention level is low. A short break might help.";
+      return "Clarity is fading. Something feels wrong.";
     }
     if (newLevel === "Very Low") {
-      return "Focusing is difficult right now. Let's pause and rest.";
+      return "Everything is slipping away...";
     }
     return "";
   }
@@ -163,7 +164,7 @@ class AttentionSystem {
    */
   triggerObservationUI(step) {
     // Steps that require observation in Day 3
-    const observationSteps = [0, 5, 8]; // Clock, Newspaper, Door number
+    const observationSteps = [0, 3, 5, 8]; // Clock, Tea tin, Newspaper, Door sign
 
     // Only trigger if this step hasn't been answered yet
     if (

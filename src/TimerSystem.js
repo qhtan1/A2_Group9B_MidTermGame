@@ -1,6 +1,8 @@
 class TimerSystem {
   constructor() {
-    this.totalSeconds = 3 * 60; // 3 minutes = 180 seconds
+    // Real-world duration: 180 seconds = 3 minutes
+    // Game-time represented: 7:00 AM → 7:45 AM (45 game-minutes)
+    this.totalSeconds = 3 * 60;
     this.remainingSeconds = this.totalSeconds;
     this.isActive = false;
     this.startTime = 0;
@@ -95,17 +97,22 @@ class TimerSystem {
   }
 
   /**
-   * Get formatted time string (MM:SS)
+   * Get elapsed game-minutes (0–45)
+   * @returns {number}
+   */
+  getGameMinutes() {
+    let elapsed = this.totalSeconds - this.remainingSeconds;
+    return min(45, floor(elapsed * 45 / this.totalSeconds));
+  }
+
+  /**
+   * Get formatted clock time string (7:MM)
    * @returns {string}
    */
   getFormattedTime() {
-    let minutes = floor(this.remainingSeconds / 60);
-    let seconds = floor(this.remainingSeconds % 60);
-
-    let minStr = minutes < 10 ? "0" + minutes : minutes;
-    let secStr = seconds < 10 ? "0" + seconds : seconds;
-
-    return minStr + ":" + secStr;
+    let gm = this.getGameMinutes();
+    let minStr = gm < 10 ? "0" + gm : "" + gm;
+    return "7:" + minStr;
   }
 
   /**
@@ -142,11 +149,12 @@ class TimerSystem {
     if (timerDisplay) {
       timerDisplay.textContent = this.getFormattedTime();
 
-      // Change color if critical
-      if (this.remainingSeconds <= 30) {
-        timerDisplay.style.color = "#f44336"; // Red
-      } else if (this.remainingSeconds <= 60) {
-        timerDisplay.style.color = "#ff9800"; // Orange
+      // Change color as deadline approaches
+      let gm = this.getGameMinutes();
+      if (gm >= 42) {
+        timerDisplay.style.color = "#f44336"; // Red  — 7:42+
+      } else if (gm >= 37) {
+        timerDisplay.style.color = "#ff9800"; // Orange — 7:37+
       } else {
         timerDisplay.style.color = "#5a4a2f"; // Normal
       }
