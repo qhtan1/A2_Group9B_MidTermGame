@@ -9,8 +9,22 @@ class AttentionSystem {
     this.blurFadeSpeed = 0.08;
 
     // Observation UI flag
-    this.shouldShowObservationUI = false;
+    this._shouldShowObservationUI = false;
     this.observationStep = null;
+
+    // Track which observation steps have been answered
+    this.answeredObservationSteps = new Set();
+
+    // Define correct answers for each observation step
+    // 0: Clock - "Something is wrong" is correct
+    // 5: Newspaper - "Something is wrong" is correct
+    // 8: Door number - "Something is wrong" is correct
+    // 3: Tea - "Looks normal" is correct (but not an observation step)
+    this.correctAnswers = {
+      0: "wrong", // Clock has distortion issues
+      5: "wrong", // Newspaper text shifts
+      8: "wrong", // Door number is wrong (204 but shows "20?")
+    };
   }
 
   /**
@@ -120,6 +134,9 @@ class AttentionSystem {
     this.currentAttention = this.maxAttention;
     this.blurEffect = 0;
     this.lastLevel = "High";
+    this.answeredObservationSteps.clear();
+    this._shouldShowObservationUI = false;
+    this.observationStep = null;
     this.updateHTMLPanel();
   }
 
@@ -143,21 +160,37 @@ class AttentionSystem {
   /**
    * Enable observation UI for a specific step
    * @param {number} step - The sequence step requiring observation
+   * @returns {boolean} - True if observation was triggered, false if already answered
    */
   triggerObservationUI(step) {
     // Steps that require observation in Day 3
     const observationSteps = [0, 5, 8]; // Clock, Newspaper, Door number
-    if (observationSteps.includes(step)) {
-      this.shouldShowObservationUI = true;
+
+    // Only trigger if this step hasn't been answered yet
+    if (
+      observationSteps.includes(step) &&
+      !this.answeredObservationSteps.has(step)
+    ) {
+      this._shouldShowObservationUI = true;
       this.observationStep = step;
+      return true;
     }
+    return false;
+  }
+
+  /**
+   * Mark an observation step as answered
+   * @param {number} step - The sequence step that was answered
+   */
+  markObservationAnswered(step) {
+    this.answeredObservationSteps.add(step);
   }
 
   /**
    * Dismiss observation UI
    */
   dismissObservationUI() {
-    this.shouldShowObservationUI = false;
+    this._shouldShowObservationUI = false;
     this.observationStep = null;
   }
 
@@ -165,8 +198,8 @@ class AttentionSystem {
    * Check if observation UI should be shown
    * @returns {boolean}
    */
-  shouldShowObservationUI() {
-    return this.shouldShowObservationUI;
+  isShowingObservationUI() {
+    return this._shouldShowObservationUI;
   }
 
   /**
@@ -175,6 +208,25 @@ class AttentionSystem {
    */
   getObservationStep() {
     return this.observationStep;
+  }
+
+  /**
+   * Get the correct answer for an observation step
+   * @param {number} step - The sequence step
+   * @returns {string} - "wrong" or "normal"
+   */
+  getCorrectAnswer(step) {
+    return this.correctAnswers[step] || "normal";
+  }
+
+  /**
+   * Check if the player's answer is correct
+   * @param {number} step - The sequence step
+   * @param {string} answer - "wrong" or "normal"
+   * @returns {boolean}
+   */
+  isAnswerCorrect(step, answer) {
+    return this.correctAnswers[step] === answer;
   }
 
   /**

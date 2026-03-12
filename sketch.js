@@ -29,6 +29,63 @@ let showDebug = false;
 // --- Day 3 特殊状态变量 ---
 let teaChoiceMade = false;
 let isDistorted = false;
+let isWaitingForObservationChoice = false;
+
+/**
+ * Handle observation choice result
+ * @param {string} answer - "wrong" or "normal"
+ */
+function handleObservationChoice(answer) {
+  console.log(`handleObservationChoice called with answer: ${answer}`);
+
+  const step = attentionSystem.getObservationStep();
+  console.log(`Observation step: ${step}`);
+
+  // Mark this observation as answered
+  attentionSystem.markObservationAnswered(step);
+
+  // Check if answer is correct
+  const isCorrect = attentionSystem.isAnswerCorrect(step, answer);
+  console.log(`Answer is correct: ${isCorrect}`);
+
+  if (isCorrect) {
+    // Correct answer - continue game normally
+    document.getElementById("npc-name").innerText = "System";
+    document.getElementById("dialogue-text").innerText =
+      "Observation complete.";
+  } else {
+    // Wrong answer - decrease attention
+    document.getElementById("npc-name").innerText = "System";
+    document.getElementById("dialogue-text").innerText =
+      "That doesn't seem right...";
+
+    let levelChanged = attentionSystem.decrease(20);
+    console.log(
+      `Attention level changed: ${levelChanged}, new level: ${attentionSystem.getLevel()}`,
+    );
+    if (levelChanged) {
+      let msg = attentionSystem.getWarningMessage(attentionSystem.getLevel());
+      setTimeout(() => {
+        document.getElementById("dialogue-text").innerText = msg;
+      }, 500);
+    }
+  }
+
+  // Close modal
+  attentionSystem.dismissObservationUI();
+  const modal = document.getElementById("observation-modal");
+  if (modal) {
+    modal.classList.remove("show");
+    modal.style.display = ""; // Clear inline style to let CSS handle it
+  }
+
+  isWaitingForObservationChoice = false;
+
+  // Continue to next sequence step after a brief delay
+  setTimeout(() => {
+    processSequence();
+  }, 1000);
+}
 
 // --- Hitboxes (Collision Bounds) ---
 const roomObstacles = {
@@ -179,6 +236,36 @@ function setup() {
   checklist = new ChecklistManager();
   timerSystem = new TimerSystem();
   attentionSystem = new AttentionSystem();
+
+  // Set up observation modal button listeners with a small delay to ensure DOM is ready
+  setTimeout(() => {
+    const btnWrong = document.getElementById("btn-something-wrong");
+    const btnNormal = document.getElementById("btn-looks-normal");
+
+    console.log("✓ Setting up event listeners on buttons");
+    console.log("  btn-something-wrong found:", btnWrong !== null);
+    console.log("  btn-looks-normal found:", btnNormal !== null);
+
+    if (btnWrong) {
+      btnWrong.addEventListener("click", () => {
+        console.log("🎯 CLICKED: Something is wrong");
+        handleObservationChoice("wrong");
+      });
+      console.log("  ✓ Event listener attached to btn-something-wrong");
+    } else {
+      console.error("❌ btn-something-wrong not found in DOM!");
+    }
+
+    if (btnNormal) {
+      btnNormal.addEventListener("click", () => {
+        console.log("🎯 CLICKED: Looks normal");
+        handleObservationChoice("normal");
+      });
+      console.log("  ✓ Event listener attached to btn-looks-normal");
+    } else {
+      console.error("❌ btn-looks-normal not found in DOM!");
+    }
+  }, 100);
 }
 
 function draw() {
@@ -204,6 +291,12 @@ function draw() {
   timerSystem.update();
   attentionSystem.update();
 
+  // Apply blur effect based on attention level
+  let blurAmount = attentionSystem.getBlurAmount() * 3;
+  if (blurAmount > 0) {
+    drawingContext.filter = `blur(${blurAmount}px)`;
+  }
+
   // Draw UI overlays (on top of game canvas)
   push();
   // Drawing in screen space, not game space
@@ -222,9 +315,17 @@ function draw() {
 
   pop();
 
+  // Reset filter
+  drawingContext.filter = "none";
+
   // Check if timer expired
   if (timerSystem.hasExpired() && timerSystem.getIsActive()) {
     handleGameOver("time");
+  }
+
+  // Check if attention is depleted
+  if (attentionSystem.currentAttention <= 0 && gameState !== "GAME_OVER") {
+    handleGameOver("attention");
   }
 }
 
@@ -265,6 +366,13 @@ function checkInteractions() {
 }
 
 function keyPressed() {
+  // Handle game over restart
+  if (gameState === "GAME_OVER" && keyCode === 82) {
+    // R key to restart
+    advanceDayToNext();
+    return;
+  }
+
   if (keyCode === 69 && gameState === "EXPLORE" && activeTarget) {
     if (dist(player.x, player.y, activeTarget.x, activeTarget.y) < 45) {
       if (activeTarget.type === "popup") {
@@ -284,6 +392,52 @@ function keyPressed() {
           isDistorted = false;
         }
 
+        // Check if this step requires observation (Day 3 only)
+        if (world.currentDay === 3) {
+          console.log(
+            `[Day 3] Step ${world.sequenceStep} - checking observation...`,
+          );
+          if (attentionSystem.triggerObservationUI(world.sequenceStep)) {
+            // Show observation modal
+            console.log(
+              `[Day 3] ✓ OBSERVATION TRIGGERED for step ${world.sequenceStep}`,
+            );
+            isWaitingForObservationChoice = true;
+            const modal = document.getElementById("observation-modal");
+
+            if (modal) {
+              console.log(
+                `[Modal] Before: classes="${modal.className}", display="${modal.style.display}"`,
+              );
+
+              // Remove the inline style display so CSS class can take over
+              modal.style.display = "";
+
+              // Add the show class to trigger CSS display: flex
+              modal.classList.add("show");
+
+              console.log(
+                `[Modal] After: classes="${modal.className}", display="${modal.style.display}"`,
+              );
+              console.log(`[Modal] Should be visible now!`);
+            } else {
+              console.error("❌ Modal element not found!");
+            }
+
+            // Set modal prompt based on step
+            const prompt = document.getElementById("observation-prompt");
+            if (prompt) {
+              prompt.innerText = "Does something look wrong?";
+            }
+
+            return; // Don't call updateDialogueForStep or show normal popup
+          } else {
+            console.log(
+              `[Day 3] Step ${world.sequenceStep} does not require observation`,
+            );
+          }
+        }
+
         updateDialogueForStep(world.sequenceStep);
       } else {
         // Door interaction
@@ -298,6 +452,11 @@ function keyPressed() {
         processSequence();
       }
     }
+  }
+
+  // Don't allow other interactions while waiting for observation choice
+  if (isWaitingForObservationChoice) {
+    return;
   }
 
   if (gameState === "INTERACT") {
@@ -498,6 +657,7 @@ function advanceDayToNext() {
         checklist.reset();
         timerSystem.reset();
         if (world.currentDay === 3) {
+          console.log("✓ DAY 3 STARTED - Enabling timer distortion");
           timerSystem.enableDistortion();
         }
         attentionSystem.reset();
@@ -511,6 +671,28 @@ function advanceDayToNext() {
       }, 1500);
     }, 2000);
   }, 2500);
+}
+
+/**
+ * Handle game over conditions (time expiration or attention depleted)
+ * @param {string} reason - "time" or "attention"
+ */
+function handleGameOver(reason) {
+  gameState = "GAME_OVER";
+  player.velocityX = 0;
+  player.velocityY = 0;
+
+  let npcName = document.getElementById("npc-name");
+  let dialogueText = document.getElementById("dialogue-text");
+
+  if (reason === "time") {
+    npcName.innerText = "System";
+    dialogueText.innerText =
+      "Out of time. The day is over. Press R to restart.";
+  } else if (reason === "attention") {
+    npcName.innerText = "System";
+    dialogueText.innerText = "You couldn't focus anymore. Press R to restart.";
+  }
 }
 
 // --- DEBUG DRAW ---
