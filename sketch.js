@@ -781,6 +781,7 @@ function startGame() {
   const titleScreen = document.getElementById("title-screen");
   titleScreen.classList.remove("show");
   titleScreen.classList.add("hide");
+  document.getElementById("main-container").style.display = "block";
   gameState = "EXPLORE";
 }
 
