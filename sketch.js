@@ -809,6 +809,25 @@ function restartGame() {
     "Use WASD or Arrows to move. Approach objects and press 'E'.";
 }
 
+// --- Music Control ---
+let musicPlaying = false;
+
+function toggleMusic() {
+  const music = document.getElementById("bg-music");
+  const btn = document.getElementById("music-btn");
+  if (musicPlaying) {
+    music.pause();
+    btn.textContent = "♪";
+    btn.classList.add("muted");
+    musicPlaying = false;
+  } else {
+    music.play();
+    btn.textContent = "♫";
+    btn.classList.remove("muted");
+    musicPlaying = true;
+  }
+}
+
 // --- DEBUG DRAW ---
 function drawDebugBoxes() {
   fill(255, 0, 0, 100);

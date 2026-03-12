@@ -416,3 +416,38 @@ body {
   to   { opacity: 1; }
 }
 
+/* --- Music Toggle Button --- */
+#music-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 20px;
+  color: #8a7650;
+  background: rgba(236, 231, 209, 0.95);
+  border: 2px solid #8a7650;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+#music-btn:hover {
+  color: #ece7d1;
+  background: #8a7650;
+}
+
+#music-btn.muted {
+  color: #aaa;
+  border-color: #666;
+  background: rgba(50, 45, 35, 0.9);
+}
+
