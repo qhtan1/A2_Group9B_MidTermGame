@@ -111,10 +111,8 @@ This project demonstrates several technical and design concepts:
 
 Based on in-class playtesting feedback and instructor comments, the following changes were implemented:
 
-- **Added stronger affordances for interaction.** Visual indicators such as **! markers** were introduced to clearly show which objects players can interact with.
-- **Expanded interaction opportunities.** Additional objects and environmental details were made interactive to encourage exploration and engagement with the routine.
+- **Introduced clearer gameplay mechanics.** The early prototype focused primarily on environmental storytelling. After playtesting, we added explicit gameplay systems such as a **routine checklist, timer system, and clarity indicator** to provide players with clearer goals and feedback.
 - **Improved spatial readability.** Some room layouts were simplified so that key objects (clock, mirror, tea canister, newspaper) are easier to locate.
-- **Adjusted dialogue pacing.** Interaction popups were refined so that players can more clearly understand the routine structure and narrative flow.
 
 ### Post-Showcase Improvements
 
