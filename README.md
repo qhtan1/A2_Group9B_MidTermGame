@@ -109,18 +109,21 @@ This project demonstrates several technical and design concepts:
 
 ### Post-Playtest Changes
 
-Based on in-class playtesting feedback, the following changes were implemented:
+Based on in-class playtesting feedback and instructor comments, the following changes were implemented:
 
-- Improved interaction indicators by adding **! markers** to objects players can interact with
-- Simplified some room layouts to make important objects easier to identify
-- Adjusted dialogue pacing so players could more clearly understand the routine structure
+- **Added stronger affordances for interaction.** Visual indicators such as **! markers** were introduced to clearly show which objects players can interact with.
+- **Expanded interaction opportunities.** Additional objects and environmental details were made interactive to encourage exploration and engagement with the routine.
+- **Improved spatial readability.** Some room layouts were simplified so that key objects (clock, mirror, tea canister, newspaper) are easier to locate.
+- **Adjusted dialogue pacing.** Interaction popups were refined so that players can more clearly understand the routine structure and narrative flow.
 
 ### Post-Showcase Improvements
 
-Planned improvements following instructor and TA feedback include:
+Based on instructor and TA feedback, the following improvements are planned for future iterations:
 
-- Expanding environmental distortions to make the progression between days more noticeable
-- Improving sound design and ambient feedback to strengthen emotional immersion
+- **Increase narrative motivation for tasks.** Some players reported that they were unsure why they were completing certain objectives. Future versions will provide clearer context for the routine, such as completing morning tasks before leaving the apartment to go grocery shopping.
+- **Explore dementia-related gameplay mechanics.** The team plans to further research cognitive decline and dementia to identify mechanics that can be translated into gameplay systems.
+- **Expand environmental distortion systems.** Inspired by psychological exploration games such as *The Exit 8*, *P.T.*, and *Visage (Chapter 2)*, future versions may introduce more noticeable spatial or environmental inconsistencies.
+- **Enhance atmospheric immersion.** Additional sound design, ambient effects, and visual cues may be added to reinforce emotional tone and player experience.
 
 ## Assets
 
