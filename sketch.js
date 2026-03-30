@@ -945,6 +945,7 @@ function handleGameOver(_reason) {
   player.velocityY = 0;
   isWaitingForObservationChoice = false;
   attentionSystem.dismissObservationUI();
+  setMusicDistortionLevel(3); // game-over collapse effect
 }
 
 /**
@@ -1092,9 +1093,10 @@ function initMusicDistortion() {
 
 /**
  * Smoothly transition to a distortion level.
- * level 0 — normal   (3 clarity bars)
- * level 1 — moderate (2 clarity bars): slight slow-down, gentle muffle + tremolo
- * level 2 — heavy    (1 clarity bar):  noticeable slow-down, strong muffle + echo + tremolo
+ * level 0 — normal    (3 clarity bars)
+ * level 1 — moderate  (2 clarity bars): slight slow-down, gentle muffle + tremolo
+ * level 2 — heavy     (1 clarity bar):  noticeable slow-down, strong muffle + echo + tremolo
+ * level 3 — game over: extreme slow-down, near-total muffle, long echo, fast heavy tremolo
  */
 function setMusicDistortionLevel(level) {
   if (level === currentMusicDistortionLevel) return;
@@ -1139,6 +1141,20 @@ function setMusicDistortionLevel(level) {
     // Pronounced, faster tremolo — audible instability
     musicLFOGain.gain.linearRampToValueAtTime(0.18,     now + ramp);
     musicLFO.frequency.linearRampToValueAtTime(0.6,     now + ramp);
+
+  } else if (level === 3) {
+    // ── Game Over: collapse ──────────────────────────────────
+    // Fast ramp — the world falls apart quickly
+    const goRamp = 1.2;
+    // Dragged to near-halt — time stops
+    music.playbackRate = 0.55;
+    // Almost fully muffled — like sound underwater
+    musicFilter.frequency.linearRampToValueAtTime(200,  now + goRamp);
+    // Long echo — the last moment stretches out
+    musicDelay.delayTime.linearRampToValueAtTime(0.35,  now + goRamp);
+    // Heavy, erratic tremolo — complete loss of stability
+    musicLFOGain.gain.linearRampToValueAtTime(0.35,     now + goRamp);
+    musicLFO.frequency.linearRampToValueAtTime(1.2,     now + goRamp);
   }
 }
 
