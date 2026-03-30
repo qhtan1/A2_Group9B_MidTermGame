@@ -73,15 +73,12 @@ class ChecklistManager {
     const checkboxes = document.querySelectorAll(
       ".checklist-item input[type='checkbox']",
     );
-    const progressEl = document.getElementById("checklist-progress");
 
     checkboxes.forEach((checkbox, index) => {
       const stepMap = [0, 1, 3, 5, 6, 8, 9]; // Map checkbox index to step number
       const step = stepMap[index];
       checkbox.checked = this.isTaskComplete(step);
     });
-
-    progressEl.textContent = `${this.getCompletedCount()}/${this.minTasksRequired}`;
   }
 
   /**

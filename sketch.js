@@ -578,15 +578,6 @@ function keyPressed() {
 
         updateDialogueForStep(world.sequenceStep);
       } else {
-        // Door interaction
-        if (!checklist.canLeaveApartment() && world.sequenceStep === 7) {
-          // Not enough tasks completed - prevent door transition
-          document.getElementById("npc-name").innerText = "System";
-          document.getElementById("dialogue-text").innerText =
-            `Complete at least ${checklist.minTasksRequired} tasks before leaving. (${checklist.getCompletedCount()}/${checklist.minTasksRequired})`;
-          return;
-        }
-
         processSequence();
       }
     }
@@ -709,6 +700,11 @@ function processSequence() {
   gameState = "TRANSITION";
 
   if (world.sequenceStep === 10) {
+    if (!checklist.canLeaveApartment()) {
+      // Not enough tasks done — game over
+      handleGameOver("routine");
+      return;
+    }
     document.getElementById("npc-name").innerText = "System";
     document.getElementById("dialogue-text").innerText = "Walking away...";
     setTimeout(() => advanceDayToNext(), 2000);
