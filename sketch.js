@@ -832,6 +832,7 @@ function advanceDayToNext() {
 
         // Reset systems for new day
         checklist.reset();
+        checklist.minTasksRequired = 4; // Day 3 requires 4 tasks
         timerSystem.reset();
         if (world.currentDay === 3) {
           console.log("✓ DAY 3 STARTED - Enabling timer distortion");
@@ -913,6 +914,7 @@ function restartGame() {
   player.x = 150;
   player.y = 130;
   checklist.reset();
+  checklist.minTasksRequired = 3; // Day 1 requires 3 tasks
   timerSystem.reset();
   attentionSystem.reset();
   isDistorted = false;
