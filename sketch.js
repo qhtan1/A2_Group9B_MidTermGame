@@ -98,6 +98,9 @@ let isWaitingForObservationChoice = false;
 let gameOverAlpha = 0;
 let gameOverScreenShown = false;
 
+// --- Day-start popup debounce ---
+let dayStartPopupTime = 0;
+
 /**
  * Handle observation choice result
  * @param {string} answer - "wrong" or "normal"
@@ -468,12 +471,15 @@ function keyPressed() {
     return;
   }
 
-  // Day-start routine popup — Space to dismiss and begin exploring
+  // Day-start routine popup — Space to dismiss (debounced so same keypress that
+  // opens the game can't immediately close it)
   if (gameState === "DAY_START" && keyCode === 32) {
-    gameState = "EXPLORE";
-    document.getElementById("npc-name").innerText = "System";
-    document.getElementById("dialogue-text").innerText =
-      "Use WASD or Arrows to explore.";
+    if (millis() - dayStartPopupTime > 300) {
+      gameState = "EXPLORE";
+      document.getElementById("npc-name").innerText = "System";
+      document.getElementById("dialogue-text").innerText =
+        "Use WASD or Arrows to explore.";
+    }
     return;
   }
 
@@ -618,49 +624,73 @@ function drawUIPopup() {
 }
 
 function drawDayStartPopup() {
-  // Popup box dimensions (in 320×180 canvas coords)
-  let bx = 20, by = 15, bw = 280, bh = 145;
-  let headerH = 22;
+  // Dark overlay behind the card
+  fill(0, 0, 0, 160);
+  noStroke();
+  rect(0, 0, width, height);
 
-  // --- Dark header bar ---
+  // --- Card dimensions: centred in canvas ---
+  let cw = 130, ch = 155;
+  let cx = (width - cw) / 2;
+  let cy = (height - ch) / 2 - 2;
+  let headerH = 18;
+
+  // Dark header bar
   fill(28, 22, 10);
   noStroke();
-  rect(bx, by, bw, headerH);
+  rect(cx, cy, cw, headerH);
 
-  fill(236, 231, 209); // cream text
+  // Header text
+  fill(236, 231, 209);
   textAlign(CENTER, CENTER);
-  textSize(7);
-  text("[ PRESS SPACE TO CLOSE ]", bx + bw / 2, by + headerH / 2);
+  textSize(5.5);
+  text("[ PRESS SPACE TO CLOSE ]", cx + cw / 2, cy + headerH / 2);
 
-  // --- Content area ---
+  // Paper content area
   fill(236, 231, 209);
   stroke(138, 118, 80);
   strokeWeight(1);
-  rect(bx, by + headerH, bw, bh - headerH);
+  rect(cx, cy + headerH, cw, ch - headerH);
 
-  // "System" label
+  // "ROUTINE" title
   noStroke();
-  fill(142, 151, 125); // olive green
-  textAlign(LEFT, TOP);
-  textSize(8);
-  text("System", bx + 10, by + headerH + 10);
-
-  // Thin separator line under "System"
-  stroke(219, 206, 165);
-  strokeWeight(1);
-  line(bx + 10, by + headerH + 22, bx + bw - 10, by + headerH + 22);
-
-  // Message text
-  noStroke();
-  fill(138, 118, 80); // brown
+  fill(138, 118, 80);
   textAlign(LEFT, TOP);
   textSize(7);
-  text(
-    "Note to self: don't forget\u2026 finish routine before leaving.",
-    bx + 10,
-    by + headerH + 28,
-    bw - 20
-  );
+  text("ROUTINE", cx + 8, cy + headerH + 7);
+
+  // Separator under title
+  stroke(138, 118, 80);
+  strokeWeight(0.5);
+  line(cx + 5, cy + headerH + 18, cx + cw - 5, cy + headerH + 18);
+
+  // Task list (matches checklist panel)
+  const tasks = [
+    "Check alarm",
+    "Look mirror",
+    "Brew tea",
+    "Read news",
+    "Talk partner",
+    "Door number",
+    "Greet neighbor",
+  ];
+
+  for (let i = 0; i < tasks.length; i++) {
+    let ty = cy + headerH + 23 + i * 15;
+
+    // Checkbox outline
+    stroke(138, 118, 80);
+    strokeWeight(0.5);
+    fill(236, 231, 209);
+    rect(cx + 8, ty, 7, 7);
+
+    // Task name
+    noStroke();
+    fill(100, 85, 60);
+    textAlign(LEFT, TOP);
+    textSize(6.5);
+    text(tasks[i], cx + 20, ty + 0.5);
+  }
 }
 
 function processSequence() {
@@ -804,6 +834,7 @@ function advanceDayToNext() {
         document.getElementById("npc-name").innerText = "System";
         document.getElementById("dialogue-text").innerText =
           "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+        dayStartPopupTime = millis();
         gameState = "DAY_START";
       }, 1500);
     }, 2000);
@@ -845,6 +876,7 @@ function startGame() {
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+  dayStartPopupTime = millis();
   gameState = "DAY_START";
 }
 
@@ -869,6 +901,7 @@ function restartGame() {
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+  dayStartPopupTime = millis();
   gameState = "DAY_START";
 }
 
