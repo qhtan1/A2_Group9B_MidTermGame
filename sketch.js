@@ -873,6 +873,8 @@ function startGame() {
   titleScreen.classList.remove("show");
   titleScreen.classList.add("hide");
   document.getElementById("main-container").style.display = "block";
+  // Blur any focused element so the Start button can't re-trigger via Space/Enter
+  if (document.activeElement) document.activeElement.blur();
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -887,6 +889,7 @@ function restartGame() {
   gameOverAlpha = 0;
   gameOverScreenShown = false;
   document.getElementById("game-over-screen").classList.remove("show");
+  if (document.activeElement) document.activeElement.blur();
 
   world.resetForNextDay(1);
   player.x = 150;
