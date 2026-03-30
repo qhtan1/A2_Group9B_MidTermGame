@@ -480,8 +480,13 @@ function checkInteractions() {
     if (nextDoor) {
       let distPrimary = dist(player.x, player.y, primaryTarget.x, primaryTarget.y);
       let distDoor    = dist(player.x, player.y, nextDoor.x,      nextDoor.y);
-      // Use whichever the player is closer to
-      activeTarget = distDoor < distPrimary ? nextDoor : primaryTarget;
+      // Popup takes priority when the player is within its interaction range.
+      // Only switch to the door when player is outside popup range AND closer to the door.
+      if (distPrimary <= 45 || distDoor >= distPrimary) {
+        activeTarget = primaryTarget;
+      } else {
+        activeTarget = nextDoor;
+      }
     } else {
       activeTarget = primaryTarget;
     }
