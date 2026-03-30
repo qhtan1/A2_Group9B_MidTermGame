@@ -566,6 +566,7 @@ function keyPressed() {
         // Start timer on first interaction (alarm clock)
         if (world.sequenceStep === 0) {
           timerSystem.start();
+          document.getElementById("timer-panel").style.visibility = "visible";
         }
 
         // Mark task as complete
@@ -842,6 +843,7 @@ function advanceDayToNext() {
         // Show day-start routine popup before gameplay
         document.getElementById("checklist-panel").style.visibility = "hidden";
         document.getElementById("attention-panel").style.visibility = "hidden";
+        document.getElementById("timer-panel").style.visibility = "hidden";
         document.getElementById("npc-name").innerText = "System";
         document.getElementById("dialogue-text").innerText =
           "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -907,6 +909,7 @@ function restartGame() {
   if (document.activeElement) document.activeElement.blur();
   document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("attention-panel").style.visibility = "hidden";
+  document.getElementById("timer-panel").style.visibility = "hidden";
 
   world.resetForNextDay(retryDay);
   player.x = 150;
