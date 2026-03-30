@@ -334,6 +334,10 @@ function draw() {
     drawBackground();
     player.draw(day3Clarity);
     drawUIPopup();
+  } else if (gameState === "DAY_START") {
+    drawBackground();
+    player.draw(1);
+    drawDayStartPopup();
   } else if (gameState === "TRANSITION") {
     background(0);
   } else if (gameState === "GAME_OVER") {
@@ -461,6 +465,15 @@ function keyPressed() {
   // Title screen — Enter or Space to start
   if (gameState === "TITLE" && (keyCode === ENTER || keyCode === 32)) {
     startGame();
+    return;
+  }
+
+  // Day-start routine popup — Space to dismiss and begin exploring
+  if (gameState === "DAY_START" && keyCode === 32) {
+    gameState = "EXPLORE";
+    document.getElementById("npc-name").innerText = "System";
+    document.getElementById("dialogue-text").innerText =
+      "Use WASD or Arrows to explore.";
     return;
   }
 
@@ -604,6 +617,52 @@ function drawUIPopup() {
   }
 }
 
+function drawDayStartPopup() {
+  // Popup box dimensions (in 320×180 canvas coords)
+  let bx = 20, by = 15, bw = 280, bh = 145;
+  let headerH = 22;
+
+  // --- Dark header bar ---
+  fill(28, 22, 10);
+  noStroke();
+  rect(bx, by, bw, headerH);
+
+  fill(236, 231, 209); // cream text
+  textAlign(CENTER, CENTER);
+  textSize(7);
+  text("[ PRESS SPACE TO CLOSE ]", bx + bw / 2, by + headerH / 2);
+
+  // --- Content area ---
+  fill(236, 231, 209);
+  stroke(138, 118, 80);
+  strokeWeight(1);
+  rect(bx, by + headerH, bw, bh - headerH);
+
+  // "System" label
+  noStroke();
+  fill(142, 151, 125); // olive green
+  textAlign(LEFT, TOP);
+  textSize(8);
+  text("System", bx + 10, by + headerH + 10);
+
+  // Thin separator line under "System"
+  stroke(219, 206, 165);
+  strokeWeight(1);
+  line(bx + 10, by + headerH + 22, bx + bw - 10, by + headerH + 22);
+
+  // Message text
+  noStroke();
+  fill(138, 118, 80); // brown
+  textAlign(LEFT, TOP);
+  textSize(7);
+  text(
+    "Note to self: don't forget\u2026 finish routine before leaving.",
+    bx + 10,
+    by + headerH + 28,
+    bw - 20
+  );
+}
+
 function processSequence() {
   gameState = "TRANSITION";
 
@@ -728,7 +787,6 @@ function advanceDayToNext() {
         world.resetForNextDay(3);
         player.x = 150;
         player.y = 130;
-        gameState = "EXPLORE";
 
         // Reset systems for new day
         checklist.reset();
@@ -742,9 +800,11 @@ function advanceDayToNext() {
         // Update HTML day display
         document.getElementById("day-display").innerText = "Day 3";
 
+        // Show day-start routine popup before gameplay
         document.getElementById("npc-name").innerText = "System";
         document.getElementById("dialogue-text").innerText =
-          "Use WASD to explore.";
+          "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+        gameState = "DAY_START";
       }, 1500);
     }, 2000);
   }, 2500);
@@ -782,7 +842,10 @@ function startGame() {
   titleScreen.classList.remove("show");
   titleScreen.classList.add("hide");
   document.getElementById("main-container").style.display = "block";
-  gameState = "EXPLORE";
+  document.getElementById("npc-name").innerText = "System";
+  document.getElementById("dialogue-text").innerText =
+    "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+  gameState = "DAY_START";
 }
 
 /**
@@ -796,7 +859,6 @@ function restartGame() {
   world.resetForNextDay(1);
   player.x = 150;
   player.y = 130;
-  gameState = "EXPLORE";
   checklist.reset();
   timerSystem.reset();
   attentionSystem.reset();
@@ -806,7 +868,8 @@ function restartGame() {
   document.getElementById("day-display").innerText = "Day 1";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
-    "Use WASD or Arrows to move. Approach objects and press 'E'.";
+    "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
+  gameState = "DAY_START";
 }
 
 // --- Music Control ---
