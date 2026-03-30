@@ -194,8 +194,17 @@ const items = [
     y: 70,
     name: "Alarm Clock",
     type: "popup",
+    hint: "Press 'E' to check alarm",
   },
-  { step: 1, room: "Bedroom", x: 200, y: 64, name: "Mirror", type: "popup" },
+  {
+    step: 1,
+    room: "Bedroom",
+    x: 200,
+    y: 64,
+    name: "Mirror",
+    type: "popup",
+    hint: "Press 'E' to look at mirror",
+  },
   {
     step: 2,
     room: "Bedroom",
@@ -203,6 +212,7 @@ const items = [
     y: 75,
     name: "Bedroom Door",
     type: "door",
+    hint: "Press 'E' to open door",
   },
   {
     step: 3,
@@ -211,6 +221,7 @@ const items = [
     y: 115,
     name: "Tea Canister",
     type: "popup",
+    hint: "Press 'E' to brew tea",
   },
   {
     step: 4,
@@ -219,6 +230,7 @@ const items = [
     y: 65,
     name: "Kitchen Door",
     type: "door",
+    hint: "Press 'E' to open door",
   },
   {
     step: 5,
@@ -227,6 +239,7 @@ const items = [
     y: 125,
     name: "Newspaper",
     type: "popup",
+    hint: "Press 'E' to read news",
   },
   {
     step: 6,
@@ -235,6 +248,7 @@ const items = [
     y: 95,
     name: "Partner",
     type: "popup",
+    hint: "Press 'E' to talk to partner",
   },
   {
     step: 7,
@@ -243,6 +257,7 @@ const items = [
     y: 65,
     name: "Main Door",
     type: "door",
+    hint: "Press 'E' to open door",
   },
   {
     step: 8,
@@ -251,8 +266,17 @@ const items = [
     y: 55,
     name: "Doorplate 204",
     type: "popup",
+    hint: "Press 'E' to check door number",
   },
-  { step: 9, room: "Outside", x: 220, y: 50, name: "Neighbor", type: "popup" },
+  {
+    step: 9,
+    room: "Outside",
+    x: 220,
+    y: 50,
+    name: "Neighbor",
+    type: "popup",
+    hint: "Press 'E' to greet neighbor",
+  },
 ];
 
 function preload() {
@@ -432,8 +456,7 @@ function checkInteractions() {
     let distance = dist(player.x, player.y, activeTarget.x, activeTarget.y);
 
     if (distance < 45) {
-      document.getElementById("dialogue-text").innerText =
-        "Press 'E' to interact.";
+      document.getElementById("dialogue-text").innerText = activeTarget.hint;
     } else {
       document.getElementById("dialogue-text").innerText =
         "Use WASD or Arrows to explore.";
