@@ -457,9 +457,30 @@ function drawBackground() {
 }
 
 function checkInteractions() {
-  activeTarget = items.find(
+  let primaryTarget = items.find(
     (i) => i.step === world.sequenceStep && i.room === world.currentRoom,
   );
+
+  // If the current step is an optional popup, also check whether the next
+  // door/exit in this room is reachable so the player can skip it.
+  if (primaryTarget && primaryTarget.type === "popup") {
+    let nextDoor = items.find(
+      (i) =>
+        i.step === world.sequenceStep + 1 &&
+        i.room === world.currentRoom &&
+        (i.type === "door" || i.type === "exit"),
+    );
+    if (nextDoor) {
+      let distPrimary = dist(player.x, player.y, primaryTarget.x, primaryTarget.y);
+      let distDoor    = dist(player.x, player.y, nextDoor.x,      nextDoor.y);
+      // Use whichever the player is closer to
+      activeTarget = distDoor < distPrimary ? nextDoor : primaryTarget;
+    } else {
+      activeTarget = primaryTarget;
+    }
+  } else {
+    activeTarget = primaryTarget;
+  }
 
   if (activeTarget) {
     let distance = dist(player.x, player.y, activeTarget.x, activeTarget.y);
@@ -579,6 +600,11 @@ function keyPressed() {
 
         updateDialogueForStep(world.sequenceStep);
       } else {
+        // If player skipped an optional popup and went straight to a door/exit,
+        // silently advance the sequence to match the target's step first.
+        while (world.sequenceStep < activeTarget.step) {
+          world.advanceSequence();
+        }
         processSequence();
       }
     }
