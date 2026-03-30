@@ -35,20 +35,20 @@ const stepRoomMap = {
   0: "Bedroom", 1: "Bedroom", 2: "Bedroom",
   3: "Kitchen", 4: "Kitchen",
   5: "LivingRoom", 6: "LivingRoom", 7: "LivingRoom",
-  8: "Outside", 9: "Outside",
+  8: "Outside", 9: "Outside", 10: "Outside",
 };
 const stepPlayerPos = {
   0: { x: 150, y: 130 }, 1: { x: 150, y: 130 }, 2: { x: 150, y: 130 },
   3: { x: 160, y: 160 },  4: { x: 160, y: 160 },
   5: { x: 155, y: 160 },  6: { x: 155, y: 160 },  7: { x: 155, y: 160 },
-  8: { x: 160, y: 120 }, 9: { x: 160, y: 120 },
+  8: { x: 160, y: 120 }, 9: { x: 160, y: 120 }, 10: { x: 160, y: 120 },
 };
 
 /**
  * Admin: jump to any sequence step within the current day
  */
 function adminJumpToStep(step) {
-  step = constrain(step, 0, 9);
+  step = constrain(step, 0, 10);
   world.sequenceStep = step;
   world.currentRoom = stepRoomMap[step];
   player.x = stepPlayerPos[step].x;
@@ -276,6 +276,15 @@ const items = [
     name: "Neighbor",
     type: "popup",
     hint: "Press 'E' to greet neighbor",
+  },
+  {
+    step: 10,
+    room: "Outside",
+    x: 90,
+    y: 80,
+    name: "Staircase",
+    type: "exit",
+    hint: "Press 'E' to leave the building",
   },
 ];
 
@@ -699,7 +708,7 @@ function drawDayStartPopup() {
 function processSequence() {
   gameState = "TRANSITION";
 
-  if (world.sequenceStep === 9) {
+  if (world.sequenceStep === 10) {
     document.getElementById("npc-name").innerText = "System";
     document.getElementById("dialogue-text").innerText = "Walking away...";
     setTimeout(() => advanceDayToNext(), 2000);
