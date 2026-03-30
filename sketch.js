@@ -900,9 +900,11 @@ function startGame() {
 }
 
 /**
- * Restart the game from Day 1 (called by the Restart button and R key)
+ * Restart the game from the day the player died on (called by the Restart button and R key)
  */
 function restartGame() {
+  let retryDay = world.currentDay; // resume on the day player died
+
   gameOverAlpha = 0;
   gameOverScreenShown = false;
   document.getElementById("game-over-screen").classList.remove("show");
@@ -910,17 +912,20 @@ function restartGame() {
   document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("attention-panel").style.visibility = "hidden";
 
-  world.resetForNextDay(1);
+  world.resetForNextDay(retryDay);
   player.x = 150;
   player.y = 130;
   checklist.reset();
-  checklist.minTasksRequired = 3; // Day 1 requires 3 tasks
+  checklist.minTasksRequired = (retryDay === 3) ? 4 : 3;
   timerSystem.reset();
+  if (retryDay === 3) {
+    timerSystem.enableDistortion();
+  }
   attentionSystem.reset();
   isDistorted = false;
   isWaitingForObservationChoice = false;
 
-  document.getElementById("day-display").innerText = "Day 1";
+  document.getElementById("day-display").innerText = "Day " + retryDay;
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
