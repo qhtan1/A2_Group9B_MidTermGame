@@ -124,7 +124,8 @@ function handleObservationChoice(answer) {
     document.getElementById("dialogue-text").innerText =
       "Observation complete.";
   } else {
-    // Wrong answer - decrease attention
+    // Wrong answer - decrease attention and reveal clarity panel
+    document.getElementById("attention-panel").style.visibility = "visible";
     document.getElementById("npc-name").innerText = "System";
     document.getElementById("dialogue-text").innerText =
       "That doesn't seem right...";
@@ -811,6 +812,7 @@ function advanceDayToNext() {
 
         // Show day-start routine popup before gameplay
         document.getElementById("checklist-panel").style.visibility = "hidden";
+        document.getElementById("attention-panel").style.visibility = "hidden";
         document.getElementById("npc-name").innerText = "System";
         document.getElementById("dialogue-text").innerText =
           "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -856,6 +858,7 @@ function startGame() {
   // Blur any focused element so the Start button can't re-trigger via Space/Enter
   if (document.activeElement) document.activeElement.blur();
   document.getElementById("checklist-panel").style.visibility = "hidden";
+  document.getElementById("attention-panel").style.visibility = "hidden";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -872,6 +875,7 @@ function restartGame() {
   document.getElementById("game-over-screen").classList.remove("show");
   if (document.activeElement) document.activeElement.blur();
   document.getElementById("checklist-panel").style.visibility = "hidden";
+  document.getElementById("attention-panel").style.visibility = "hidden";
 
   world.resetForNextDay(1);
   player.x = 150;
