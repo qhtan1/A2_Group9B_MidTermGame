@@ -638,12 +638,12 @@ function drawDayStartPopup() {
   // Task list
   const tasks = [
     "Check alarm",
-    "Look at\nmirror",
+    "Look at mirror",
     "Brew tea",
     "Read news",
     "Talk to partner",
-    "Check door\nnumber",
-    "Greet\nneighbor",
+    "Check door number",
+    "Greet neighbor",
   ];
 
   for (let i = 0; i < tasks.length; i++) {
