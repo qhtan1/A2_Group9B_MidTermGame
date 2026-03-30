@@ -187,6 +187,13 @@ body {
   text-overflow: ellipsis;
 }
 
+.checklist-item-wrap span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.3;
+}
+
 #checklist-progress {
   font-size: 9px;
   color: #6a5a3f;

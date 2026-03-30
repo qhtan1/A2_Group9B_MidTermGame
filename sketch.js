@@ -640,9 +640,9 @@ function drawDayStartPopup() {
     "Look mirror",
     "Brew tea",
     "Read news",
-    "Talk partner",
+    "Talk to partner",
     "Door number",
-    "Greet neighbor",
+    "Greet\nneighbor",
   ];
 
   for (let i = 0; i < tasks.length; i++) {
