@@ -592,25 +592,6 @@ function drawUIPopup() {
   if (img) image(img, 0, 0, width, height); // 完美全图覆盖
   pop();
 
-  // Draw 7:45 alarm mark on clock popup (both Day 1 and Day 3)
-  // Minute hand at 45 min points to the "9" position (left side of clock face)
-  // Adjust clockCX/clockCY/clockR if the clock image layout differs
-  if (world.sequenceStep === 0) {
-    const clockCX = 160; // estimated clock center x
-    const clockCY = 82;  // estimated clock center y
-    const clockR  = 42;  // radius to the number ring
-    // "7" on a clock face = 210° from top, clockwise
-    // In p5 coords (east = 0°): subtract 90° → 120°
-    const angle = radians(120);
-    const markX = clockCX + clockR * cos(angle);
-    const markY = clockCY + clockR * sin(angle);
-    push();
-    fill(210, 30, 30);
-    noStroke();
-    ellipse(markX, markY, 8, 8); // red dot near the "7"
-    pop();
-  }
-
   fill(0, 0, 0, 150);
   rect(0, height - 20, width, 20);
   fill("#ECE7D1");
