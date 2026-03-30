@@ -722,7 +722,7 @@ function updateDialogueForStep(step) {
   if (world.currentDay === 1) {
     if (step === 0) {
       npcName.innerText = "System";
-      uiText.innerText = "7:00 AM. I need to leave before 7:45 am for groceries.";
+      uiText.innerText = "7:00 AM\u2026 I should get ready.";
     }
     if (step === 1) {
       npcName.innerText = "System";
@@ -751,7 +751,7 @@ function updateDialogueForStep(step) {
   } else if (world.currentDay === 3) {
     if (step === 0) {
       npcName.innerText = "System";
-      uiText.innerText = "7:00... I need to leave before 7:45 am for groceries.";
+      uiText.innerText = "7:00\u2026 I need to leave before 7:40\u2026 I think.";
     }
     if (step === 1) {
       npcName.innerText = "System";
