@@ -140,6 +140,14 @@ function handleObservationChoice(answer) {
         document.getElementById("dialogue-text").innerText = msg;
       }, 500);
     }
+
+    // Update music distortion to match new clarity level
+    let segs = attentionSystem.getSegments();
+    if (segs <= 1) {
+      setMusicDistortionLevel(2); // 1 bar — heavy
+    } else if (segs <= 2) {
+      setMusicDistortionLevel(1); // 2 bars — moderate
+    }
   }
 
   attentionSystem.dismissObservationUI();
@@ -905,6 +913,7 @@ function advanceDayToNext() {
           timerSystem.enableDistortion();
         }
         attentionSystem.reset();
+        setMusicDistortionLevel(0); // reset audio distortion for new day
 
         // Update HTML day display
         document.getElementById("day-display").innerText = "Day 3";
@@ -990,6 +999,7 @@ function restartGame() {
     timerSystem.enableDistortion();
   }
   attentionSystem.reset();
+  setMusicDistortionLevel(0); // reset audio distortion on restart
   isDistorted = false;
   isWaitingForObservationChoice = false;
 
@@ -1014,9 +1024,121 @@ function toggleMusic() {
     musicPlaying = false;
   } else {
     music.play();
+    initMusicDistortion(); // set up Web Audio chain on first play
     btn.textContent = "♫";
     btn.classList.remove("muted");
     musicPlaying = true;
+  }
+}
+
+// --- Music Distortion (Web Audio API) ---
+let audioCtx        = null;
+let musicFilter     = null;   // BiquadFilter  — lowpass
+let musicDelay      = null;   // DelayNode     — echo tail
+let musicGainNode   = null;   // GainNode      — master (modulated by LFO)
+let musicLFO        = null;   // OscillatorNode — tremolo source
+let musicLFOGain    = null;   // GainNode      — tremolo depth
+let currentMusicDistortionLevel = 0;
+
+/**
+ * Build the Web Audio processing chain the first time music plays.
+ * Source → LowpassFilter → Delay → Gain(LFO) → destination
+ */
+function initMusicDistortion() {
+  if (audioCtx) return; // already initialised
+  const music = document.getElementById("bg-music");
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+
+    const source  = audioCtx.createMediaElementSource(music);
+
+    // Low-pass filter (cuts high-frequency brightness)
+    musicFilter = audioCtx.createBiquadFilter();
+    musicFilter.type = "lowpass";
+    musicFilter.frequency.value = 20000; // fully open to start
+
+    // Delay (subtle echo at heavy distortion)
+    musicDelay = audioCtx.createDelay(1.0);
+    musicDelay.delayTime.value = 0;
+
+    // Master gain (also the tremolo target)
+    musicGainNode = audioCtx.createGain();
+    musicGainNode.gain.value = 1.0;
+
+    // LFO → LFOGain → musicGainNode.gain  (tremolo)
+    musicLFO = audioCtx.createOscillator();
+    musicLFO.type = "sine";
+    musicLFO.frequency.value = 0.2;
+    musicLFO.start();
+
+    musicLFOGain = audioCtx.createGain();
+    musicLFOGain.gain.value = 0; // depth = 0 → no tremolo at start
+
+    musicLFO.connect(musicLFOGain);
+    musicLFOGain.connect(musicGainNode.gain);
+
+    // Signal chain
+    source.connect(musicFilter);
+    musicFilter.connect(musicDelay);
+    musicDelay.connect(musicGainNode);
+    musicGainNode.connect(audioCtx.destination);
+
+  } catch (e) {
+    console.warn("Web Audio API unavailable:", e);
+    audioCtx = null;
+  }
+}
+
+/**
+ * Smoothly transition to a distortion level.
+ * level 0 — normal   (3 clarity bars)
+ * level 1 — moderate (2 clarity bars): slight slow-down, gentle muffle + tremolo
+ * level 2 — heavy    (1 clarity bar):  noticeable slow-down, strong muffle + echo + tremolo
+ */
+function setMusicDistortionLevel(level) {
+  if (level === currentMusicDistortionLevel) return;
+  currentMusicDistortionLevel = level;
+
+  // Initialise lazily in case music was turned on before distortion was needed
+  if (!audioCtx) initMusicDistortion();
+  if (!audioCtx)  return; // Web Audio not available
+
+  const music = document.getElementById("bg-music");
+  const now   = audioCtx.currentTime;
+  const ramp  = 2.0; // seconds for smooth transition
+
+  if (level === 0) {
+    // ── Normal ──────────────────────────────────────────────
+    music.playbackRate = 1.0;
+    musicFilter.frequency.linearRampToValueAtTime(20000, now + ramp);
+    musicDelay.delayTime.linearRampToValueAtTime(0,     now + ramp);
+    musicLFOGain.gain.linearRampToValueAtTime(0,        now + ramp);
+    musicLFO.frequency.linearRampToValueAtTime(0.2,     now + ramp);
+
+  } else if (level === 1) {
+    // ── 2 bars: subtle ──────────────────────────────────────
+    // Slightly slower (pitch drops a little, time feels heavier)
+    music.playbackRate = 0.93;
+    // Light muffle — takes the edge off high frequencies
+    musicFilter.frequency.linearRampToValueAtTime(1800, now + ramp);
+    // No delay yet
+    musicDelay.delayTime.linearRampToValueAtTime(0,     now + ramp);
+    // Very gentle, slow tremolo (barely noticeable breathing)
+    musicLFOGain.gain.linearRampToValueAtTime(0.05,     now + ramp);
+    musicLFO.frequency.linearRampToValueAtTime(0.2,     now + ramp);
+
+  } else if (level === 2) {
+    // ── 1 bar: heavy ────────────────────────────────────────
+    // Noticeably slower — like a tape recorder running low on power
+    music.playbackRate = 0.80;
+    // Strong muffle — sounds like music heard through a wall
+    musicFilter.frequency.linearRampToValueAtTime(500,  now + ramp);
+    // Echo tail — sense of disorientation / time slipping
+    musicDelay.delayTime.linearRampToValueAtTime(0.15,  now + ramp);
+    // Pronounced, faster tremolo — audible instability
+    musicLFOGain.gain.linearRampToValueAtTime(0.18,     now + ramp);
+    musicLFO.frequency.linearRampToValueAtTime(0.6,     now + ramp);
   }
 }
 
