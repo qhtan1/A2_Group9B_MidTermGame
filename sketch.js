@@ -633,38 +633,26 @@ function drawDayStartPopup() {
   let cw = 130, ch = 155;
   let cx = (width - cw) / 2;
   let cy = (height - ch) / 2 - 2;
-  let headerH = 18;
 
-  // Dark header bar
-  fill(28, 22, 10);
-  noStroke();
-  rect(cx, cy, cw, headerH);
-
-  // Header text
-  fill(236, 231, 209);
-  textAlign(CENTER, CENTER);
-  textSize(5.5);
-  text("[ PRESS SPACE TO CLOSE ]", cx + cw / 2, cy + headerH / 2);
-
-  // Paper content area
+  // Paper content area (no header — hint moves to bottom bar)
   fill(236, 231, 209);
   stroke(138, 118, 80);
   strokeWeight(1);
-  rect(cx, cy + headerH, cw, ch - headerH);
+  rect(cx, cy, cw, ch);
 
   // "ROUTINE" title
   noStroke();
   fill(138, 118, 80);
   textAlign(LEFT, TOP);
   textSize(7);
-  text("ROUTINE", cx + 8, cy + headerH + 7);
+  text("ROUTINE", cx + 8, cy + 7);
 
   // Separator under title
   stroke(138, 118, 80);
   strokeWeight(0.5);
-  line(cx + 5, cy + headerH + 18, cx + cw - 5, cy + headerH + 18);
+  line(cx + 5, cy + 18, cx + cw - 5, cy + 18);
 
-  // Task list (matches checklist panel)
+  // Task list
   const tasks = [
     "Check alarm",
     "Look mirror",
@@ -676,7 +664,7 @@ function drawDayStartPopup() {
   ];
 
   for (let i = 0; i < tasks.length; i++) {
-    let ty = cy + headerH + 23 + i * 15;
+    let ty = cy + 23 + i * 15;
 
     // Checkbox outline
     stroke(138, 118, 80);
@@ -691,6 +679,15 @@ function drawDayStartPopup() {
     textSize(6.5);
     text(tasks[i], cx + 20, ty + 0.5);
   }
+
+  // --- Bottom hint bar (matches other popups) ---
+  fill(0, 0, 0, 150);
+  noStroke();
+  rect(0, height - 20, width, 20);
+  fill("#ECE7D1");
+  textAlign(CENTER, CENTER);
+  textSize(8);
+  text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
 }
 
 function processSequence() {
