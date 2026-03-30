@@ -461,12 +461,9 @@ function checkInteractions() {
     (i) => i.step === world.sequenceStep && i.room === world.currentRoom,
   );
 
-  // Steps that are story-required and cannot be skipped.
-  // Step 0 (alarm): required every day.
-  // Step 5 (newspaper): required on Day 1 only.
-  let stepIsRequired =
-    world.sequenceStep === 0 ||
-    (world.sequenceStep === 5 && world.currentDay === 1);
+  // Steps that are navigation-required (cannot skip to a door/exit).
+  // Only the alarm (step 0) — must interact before leaving the bedroom.
+  let stepIsRequired = world.sequenceStep === 0;
 
   // If the current step is an optional popup, also check whether the next
   // door/exit in this room is reachable so the player can skip it.
@@ -492,6 +489,26 @@ function checkInteractions() {
     }
   } else {
     activeTarget = primaryTarget;
+  }
+
+  // Look-ahead popup: expose the next popup in sequence (same room) so the
+  // player can trigger order-death by interacting out of sequence.
+  // Only activates when the player is within range of the NEXT popup but
+  // outside range of the current primary target.
+  if (activeTarget === primaryTarget && primaryTarget && primaryTarget.type === "popup") {
+    let nextPopup = items.find(
+      (i) =>
+        i.step === world.sequenceStep + 1 &&
+        i.room === world.currentRoom &&
+        i.type === "popup",
+    );
+    if (nextPopup) {
+      let distCurrent = dist(player.x, player.y, primaryTarget.x, primaryTarget.y);
+      let distNext    = dist(player.x, player.y, nextPopup.x,     nextPopup.y);
+      if (distCurrent > 45 && distNext <= 45) {
+        activeTarget = nextPopup;
+      }
+    }
   }
 
   if (activeTarget) {
@@ -594,6 +611,20 @@ function keyPressed() {
   if (keyCode === 69 && gameState === "EXPLORE" && activeTarget) {
     if (dist(player.x, player.y, activeTarget.x, activeTarget.y) < 45) {
       if (activeTarget.type === "popup") {
+        // Order-death: interacting out of sequence causes instant death.
+        //   Mirror (step 1) before alarm (step 0)
+        //   Partner (step 6) before newspaper (step 5)
+        //   Neighbor (step 9) before doorplate (step 8)
+        if (activeTarget.step === 1 && !checklist.isTaskComplete(0)) {
+          handleGameOver("order"); return;
+        }
+        if (activeTarget.step === 6 && !checklist.isTaskComplete(5)) {
+          handleGameOver("order"); return;
+        }
+        if (activeTarget.step === 9 && !checklist.isTaskComplete(8)) {
+          handleGameOver("order"); return;
+        }
+
         gameState = "INTERACT";
 
         // Start timer on first interaction (alarm clock)
