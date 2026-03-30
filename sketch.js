@@ -733,7 +733,7 @@ function updateDialogueForStep(step) {
     }
     if (step === 5) {
       npcName.innerText = "System";
-      uiText.innerText = "Today's newspaper.";
+      uiText.innerText = "Today\u2019s paper\u2026 Oh\u2026 eggs are on sale today. I should leave before 7:40.";
     }
     if (step === 6) {
       npcName.innerText = "Partner";
@@ -762,7 +762,7 @@ function updateDialogueForStep(step) {
     }
     if (step === 5) {
       npcName.innerText = "System";
-      uiText.innerText = "The letters are... shifting.";
+      uiText.innerText = "The letters look\u2026 different. Or maybe it\u2019s just me.";
     }
     if (step === 6) {
       npcName.innerText = "Partner";
