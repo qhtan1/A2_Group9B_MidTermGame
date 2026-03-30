@@ -17,11 +17,13 @@ class AttentionSystem {
 
     // Define correct answers for each observation step
     // 0: Clock - extra hand → "Something is wrong"
+    // 1: Mirror - reflection looks unfamiliar → "Something is wrong"
     // 3: Tea tin - unchanged from Day 1 → "Looks normal"
     // 5: Newspaper - missing letters → "Something is wrong"
     // 8: Door sign - incomplete number → "Something is wrong"
     this.correctAnswers = {
       0: "wrong",  // Clock has an extra hand
+      1: "wrong",  // Mirror reflection looks unfamiliar
       3: "normal", // Tea tin is unchanged — "something is wrong" is the wrong answer
       5: "wrong",  // Newspaper has missing letters
       8: "wrong",  // Door sign shows "20?" instead of 204
@@ -164,7 +166,7 @@ class AttentionSystem {
    */
   triggerObservationUI(step) {
     // Steps that require observation in Day 3
-    const observationSteps = [0, 3, 5, 8]; // Clock, Tea tin, Newspaper, Door sign
+    const observationSteps = [0, 1, 3, 5, 8]; // Clock, Mirror, Tea tin, Newspaper, Door sign
 
     // Only trigger if this step hasn't been answered yet
     if (

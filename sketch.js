@@ -654,7 +654,7 @@ function keyPressed() {
   }
 
   if (gameState === "INTERACT") {
-    // Observation choice for Day 3 (steps 0, 5, 8)
+    // Observation choice for Day 3 (steps 0, 1, 3, 5, 8)
     if (isWaitingForObservationChoice) {
       if (keyCode === 49) {
         handleObservationChoice("wrong");
