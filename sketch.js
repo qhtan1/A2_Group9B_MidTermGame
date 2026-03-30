@@ -470,8 +470,11 @@ function checkInteractions() {
   );
 
   // Steps that are navigation-required (cannot skip to a door/exit).
-  // Only the alarm (step 0) — must interact before leaving the bedroom.
-  let stepIsRequired = world.sequenceStep === 0;
+  // Alarm (step 0): must interact before leaving the bedroom — both days.
+  // Newspaper (step 5, Day 1 only): must read before leaving the living room.
+  let stepIsRequired =
+    world.sequenceStep === 0 ||
+    (world.sequenceStep === 5 && world.currentDay === 1);
 
   // If the current step is an optional popup, also check whether the next
   // door/exit in this room is reachable so the player can skip it.
