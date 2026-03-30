@@ -461,9 +461,16 @@ function checkInteractions() {
     (i) => i.step === world.sequenceStep && i.room === world.currentRoom,
   );
 
+  // Steps that are story-required and cannot be skipped.
+  // Step 0 (alarm): required every day.
+  // Step 5 (newspaper): required on Day 1 only.
+  let stepIsRequired =
+    world.sequenceStep === 0 ||
+    (world.sequenceStep === 5 && world.currentDay === 1);
+
   // If the current step is an optional popup, also check whether the next
   // door/exit in this room is reachable so the player can skip it.
-  if (primaryTarget && primaryTarget.type === "popup") {
+  if (primaryTarget && primaryTarget.type === "popup" && !stepIsRequired) {
     let nextDoor = items.find(
       (i) =>
         i.step > world.sequenceStep &&
