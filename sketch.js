@@ -476,6 +476,7 @@ function keyPressed() {
   if (gameState === "DAY_START" && keyCode === 32) {
     if (millis() - dayStartPopupTime > 300) {
       gameState = "EXPLORE";
+      document.getElementById("checklist-panel").style.visibility = "visible";
       document.getElementById("npc-name").innerText = "System";
       document.getElementById("dialogue-text").innerText =
         "Use WASD or Arrows to explore.";
@@ -828,6 +829,7 @@ function advanceDayToNext() {
         document.getElementById("day-display").innerText = "Day 3";
 
         // Show day-start routine popup before gameplay
+        document.getElementById("checklist-panel").style.visibility = "hidden";
         document.getElementById("npc-name").innerText = "System";
         document.getElementById("dialogue-text").innerText =
           "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -872,6 +874,7 @@ function startGame() {
   document.getElementById("main-container").style.display = "block";
   // Blur any focused element so the Start button can't re-trigger via Space/Enter
   if (document.activeElement) document.activeElement.blur();
+  document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -887,6 +890,7 @@ function restartGame() {
   gameOverScreenShown = false;
   document.getElementById("game-over-screen").classList.remove("show");
   if (document.activeElement) document.activeElement.blur();
+  document.getElementById("checklist-panel").style.visibility = "hidden";
 
   world.resetForNextDay(1);
   player.x = 150;
