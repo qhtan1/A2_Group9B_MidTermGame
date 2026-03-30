@@ -39,8 +39,8 @@ const stepRoomMap = {
 };
 const stepPlayerPos = {
   0: { x: 150, y: 130 }, 1: { x: 150, y: 130 }, 2: { x: 150, y: 130 },
-  3: { x: 160, y: 80 },  4: { x: 160, y: 80 },
-  5: { x: 155, y: 80 },  6: { x: 155, y: 80 },  7: { x: 155, y: 80 },
+  3: { x: 160, y: 140 },  4: { x: 160, y: 140 },
+  5: { x: 155, y: 140 },  6: { x: 155, y: 140 },  7: { x: 155, y: 140 },
   8: { x: 160, y: 120 }, 9: { x: 160, y: 120 },
 };
 
@@ -687,11 +687,11 @@ function processSequence() {
   if (world.sequenceStep === 3) {
     world.changeRoom("Kitchen");
     player.x = 160;
-    player.y = 80;
+    player.y = 140;
   } else if (world.sequenceStep === 5) {
     world.changeRoom("LivingRoom");
     player.x = 155;
-    player.y = 80;
+    player.y = 140;
   } else if (world.sequenceStep === 8) {
     world.changeRoom("Outside");
     player.x = 160;
