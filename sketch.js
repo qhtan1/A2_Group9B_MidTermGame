@@ -466,7 +466,7 @@ function checkInteractions() {
   if (primaryTarget && primaryTarget.type === "popup") {
     let nextDoor = items.find(
       (i) =>
-        i.step === world.sequenceStep + 1 &&
+        i.step > world.sequenceStep &&
         i.room === world.currentRoom &&
         (i.type === "door" || i.type === "exit"),
     );
