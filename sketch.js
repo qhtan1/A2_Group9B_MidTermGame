@@ -368,6 +368,11 @@ function draw() {
   if (gameState === "EXPLORE") {
     drawBackground();
 
+    // Draw required markers BEFORE player so the player renders on top
+    if (world.currentDay === 1) {
+      drawRequiredMarkers();
+    }
+
     let obstacles = roomObstacles[world.currentRoom] || [];
     player.handleMovement(obstacles, width, height, day3Clarity);
 
@@ -437,11 +442,6 @@ function draw() {
 
   // Draw attention system (top-right)
   attentionSystem.draw();
-
-  // Draw required-item markers (Day 1 only)
-  if (world.currentDay === 1 && gameState === "EXPLORE") {
-    drawRequiredMarkers();
-  }
 
   // Draw admin mode overlay
   if (adminMode) {
@@ -552,12 +552,13 @@ function drawRequiredMarkers() {
   textAlign(CENTER, CENTER);
   textStyle(BOLD);
   textSize(9);
-  noStroke();
+  stroke(0);
+  strokeWeight(2);
   fill(markerColor);
 
   // Alarm clock — Bedroom, only before it's been checked
   if (world.currentRoom === "Bedroom" && !checklist.isTaskComplete(0)) {
-    text("!", 113, 57 + bob);
+    text("!", 116, 53 + bob);
   }
 
   // Newspaper — LivingRoom, only before it's been read
@@ -565,6 +566,7 @@ function drawRequiredMarkers() {
     text("!", 195, 112 + bob);
   }
 
+  noStroke();
   textStyle(NORMAL);
   textAlign(LEFT, BASELINE);
 }
