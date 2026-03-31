@@ -438,6 +438,11 @@ function draw() {
   // Draw attention system (top-right)
   attentionSystem.draw();
 
+  // Draw required-item markers (Day 1 only)
+  if (world.currentDay === 1 && gameState === "EXPLORE") {
+    drawRequiredMarkers();
+  }
+
   // Draw admin mode overlay
   if (adminMode) {
     drawAdminOverlay();
@@ -532,6 +537,36 @@ function checkInteractions() {
         "Use WASD or Arrows to explore.";
     }
   }
+}
+
+/**
+ * Draw floating "!" markers above required items on Day 1.
+ * Alarm clock (step 0) in Bedroom, Newspaper (step 5) in LivingRoom.
+ * Disappears once the item has been interacted with.
+ */
+function drawRequiredMarkers() {
+  // Muted dusty-rose red — matches the game's warm nostalgic palette
+  const markerColor = color(162, 82, 72);
+  const bob = sin(millis() * 0.003) * 2; // gentle float ±2px
+
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(9);
+  noStroke();
+  fill(markerColor);
+
+  // Alarm clock — Bedroom, only before it's been checked
+  if (world.currentRoom === "Bedroom" && !checklist.isTaskComplete(0)) {
+    text("!", 113, 57 + bob);
+  }
+
+  // Newspaper — LivingRoom, only before it's been read
+  if (world.currentRoom === "LivingRoom" && !checklist.isTaskComplete(5)) {
+    text("!", 195, 112 + bob);
+  }
+
+  textStyle(NORMAL);
+  textAlign(LEFT, BASELINE);
 }
 
 function drawAdminOverlay() {
