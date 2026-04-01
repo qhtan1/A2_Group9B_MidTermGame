@@ -9,6 +9,16 @@ class Player {
     this.direction = "down";
     this.isMoving = false;
     this.animFrame = 0;
+
+    // Day 5: Elderly sprite — uses a warm sepia tint on the existing sprites
+    this.useElderlySprite = false;
+
+    // Day 5: Wrong direction mechanic
+    this.wrongDirEnabled  = false;
+    this._wrongDirTimer   = 0;
+    this._wrongDirActive  = false;
+    this._wrongDirDuration = 0;
+    this._wrongDirType    = ''; // 'W_to_R'  (W→right) | 'A_to_U' (A→up)
   }
 
   // clarityRatio: 1 = full clarity, 0 = no clarity (Day 3 only)
@@ -36,10 +46,11 @@ class Player {
 
       // Glitch effect (Day 3 when clarity is reduced)
       var glitchStrength = map(clarityRatio, 1, 0, 0, 8);
-      var jitterChance = map(clarityRatio, 1, 0, 0, 0.5);
-      var doJitter = clarityRatio < 1 && random() < jitterChance;
+      var jitterChance   = map(clarityRatio, 1, 0, 0, 0.5);
+      var doJitter       = clarityRatio < 1 && random() < jitterChance;
 
       push();
+
       if (doJitter) {
         drawX += random(-glitchStrength, glitchStrength);
         drawY += random(-glitchStrength * 0.5, glitchStrength * 0.5);
@@ -47,6 +58,11 @@ class Player {
         tint(255, 60, 60, 120);
         image(currentImg, drawX + glitchStrength * 0.8, drawY, drawW, drawH);
         noTint();
+      }
+
+      // Day 5 elderly: warm sepia tint over the normal sprite
+      if (this.useElderlySprite) {
+        tint(215, 185, 135); // aged / sepia warmth
       }
 
       // Occasional flicker at low clarity
@@ -80,24 +96,57 @@ class Player {
     var nextY = this.y;
     this.isMoving = false;
 
-    if (keyIsDown(87) || keyIsDown(UP_ARROW)) {
-      nextY -= currentSpeed;
-      this.direction = "up";
-      this.isMoving = true;
-    } else if (keyIsDown(83) || keyIsDown(DOWN_ARROW)) {
-      nextY += currentSpeed;
-      this.direction = "down";
-      this.isMoving = true;
+    // ── Day 5: Wrong-direction glitch ─────────────────────────────────────
+    if (this.wrongDirEnabled) {
+      this._wrongDirTimer++;
+      // Re-roll every ~240 frames (~4 s at 60 fps); 22% chance of glitch burst
+      if (this._wrongDirTimer % 240 === 0 && random() < 0.22) {
+        this._wrongDirActive   = true;
+        this._wrongDirDuration = 50;                              // ~0.8 s
+        this._wrongDirType     = random() < 0.5 ? 'W_to_R' : 'A_to_U';
+      }
+      if (this._wrongDirActive) {
+        this._wrongDirDuration--;
+        if (this._wrongDirDuration <= 0) this._wrongDirActive = false;
+      }
     }
 
-    if (keyIsDown(65) || keyIsDown(LEFT_ARROW)) {
+    // Determine intended directions from keys
+    let wantUp    = (keyIsDown(87) || keyIsDown(UP_ARROW));
+    let wantDown  = (keyIsDown(83) || keyIsDown(DOWN_ARROW));
+    let wantLeft  = (keyIsDown(65) || keyIsDown(LEFT_ARROW));
+    let wantRight = (keyIsDown(68) || keyIsDown(RIGHT_ARROW));
+
+    // Apply wrong direction override when glitch is active
+    if (this.wrongDirEnabled && this._wrongDirActive) {
+      if (this._wrongDirType === 'W_to_R' && wantUp) {
+        wantUp    = false;
+        wantRight = true;
+      } else if (this._wrongDirType === 'A_to_U' && wantLeft) {
+        wantLeft = false;
+        wantUp   = true;
+      }
+    }
+
+    // Apply movement from effective directions
+    if (wantUp) {
+      nextY -= currentSpeed;
+      this.direction = "up";
+      this.isMoving  = true;
+    } else if (wantDown) {
+      nextY += currentSpeed;
+      this.direction = "down";
+      this.isMoving  = true;
+    }
+
+    if (wantLeft) {
       nextX -= currentSpeed;
       this.direction = "left";
-      this.isMoving = true;
-    } else if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) {
+      this.isMoving  = true;
+    } else if (wantRight) {
       nextX += currentSpeed;
       this.direction = "right";
-      this.isMoving = true;
+      this.isMoving  = true;
     }
 
     nextX = constrain(nextX, 0, canvasWidth - this.w);

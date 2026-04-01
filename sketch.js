@@ -10,10 +10,11 @@ let attentionSystem;
 
 let bgImages = {};
 
-// 嵌套对象，区分 Day 1 和 Day 3 的图片
+// 嵌套对象，区分 Day 1 / Day 3 / Day 5 的图片
 let uiImages = {
   day1: {},
   day3: {},
+  day5: {},
 };
 
 let playerSprites = {
@@ -79,15 +80,31 @@ function adminJumpToDay(day) {
   isDistorted = false;
   isWaitingForObservationChoice = false;
 
+  // Reset Day 5 flags
+  day5MirrorDone          = false;
+  player.useElderlySprite = false;
+  player.wrongDirEnabled  = (day === 5);
+
+  // Reset ending/family scene state
+  familyScenePhase = 0;
+  endingPhase      = 0;
+
   const modal = document.getElementById("observation-modal");
   if (modal) modal.classList.remove("show");
 
   if (day === 3) timerSystem.enableDistortion();
+  if (day === 5) timerSystem.enableDay5Mode();
 
-  document.getElementById("day-display").innerText = "Day " + day;
-  document.getElementById("npc-name").innerText = "[ADMIN]";
+  checklist.minTasksRequired =
+    day === 3 ? 4 :
+    day === 5 ? 5 : 3;
+
+  // Restore hidden panels for gameplay
+  document.getElementById("checklist-panel").style.visibility = "visible";
+  document.getElementById("npc-name").innerText    = "[ADMIN]";
   document.getElementById("dialogue-text").innerText =
-    `Jumped to Day ${day} — start of day`;
+    `Jumped to Day ${day} \u2014 start of day`;
+  document.getElementById("day-display").innerText = "Day " + day;
 }
 
 // --- Day 3 特殊状态变量 ---
@@ -100,6 +117,29 @@ let gameOverScreenShown = false;
 
 // --- Day-start popup debounce ---
 let dayStartPopupTime = 0;
+
+// ── Day 5 state ──────────────────────────────────────────────────────────────
+let day5MirrorDone = false;   // becomes true after player looks in mirror Day 5
+
+// Family scene (plays before the two endings)
+let familyScenePhase     = 0;   // 0–7  (dialogue pairs then choice)
+let familySceneStartTime = 0;
+
+const FAMILY_HEARD = [
+  "\u201cYou can\u2019t do anything right.\u201d",
+  "\u201cYou don\u2019t remember us.\u201d",
+  "\u201cYou\u2019re a burden.\u201d",
+];
+const FAMILY_SUBTITLE = [
+  "\u201cWe\u2019re here.\u201d",
+  "\u201cTake your time.\u201d",
+  "\u201cIt\u2019s okay.\u201d",
+];
+
+// Ending state
+let endingPhase     = 0;
+let endingStartTime = 0;
+const ENDING_B_FRAGMENTS = ["Bef\u2014", "For\u2014", "Forget", "\u2026"];
 
 /**
  * Handle observation choice result
@@ -320,6 +360,15 @@ function preload() {
   uiImages.day3[8] = loadImage("assets/ui_door204_day3.png");
   uiImages.day3[9] = loadImage("assets/ui_neighbor.png");
 
+  // --- Day 5 图片 (reuse day3 assets — same objects, deeper decline) ---
+  uiImages.day5[0] = loadImage("assets/ui_clock_day3.png");   // alarm — wrong feedback
+  uiImages.day5[1] = loadImage("assets/ui_mirror_day3.png");  // mirror — elderly reflection
+  uiImages.day5[3] = loadImage("assets/ui_tea_day3.png");     // tea — wrong feedback
+  uiImages.day5[5] = loadImage("assets/ui_news_day3.png");
+  uiImages.day5[6] = loadImage("assets/ui_partner.png");
+  uiImages.day5[8] = loadImage("assets/ui_door204_day3.png");
+  uiImages.day5[9] = loadImage("assets/ui_neighbor.png");
+
   // 🚨 注意这里的后缀全部改成了大写 .PNG 🚨
   for (let i = 1; i <= 3; i++) {
     playerSprites.down.push(loadImage(`assets/Front${i}.PNG`));
@@ -356,8 +405,8 @@ function draw() {
     drawingContext.filter = `blur(${totalBlur}px)`;
   }
 
-  // Day 3 clarity ratio passed to player for glitch + speed effects
-  let day3Clarity = (world.currentDay === 3) ? clarityRatio : 1;
+  // Day 3/5 clarity ratio passed to player for glitch + speed effects
+  let day3Clarity = (world.currentDay === 3 || world.currentDay === 5) ? clarityRatio : 1;
 
   if (gameState === "TITLE") {
     background(13);
@@ -365,11 +414,28 @@ function draw() {
     return;
   }
 
+  // ── Day 5 terminal/cinematic states — draw then return early ────────────
+  if (gameState === "FAMILY_SCENE") {
+    drawingContext.filter = "none";
+    drawFamilyScene();
+    return;
+  }
+  if (gameState === "ENDING_A") {
+    drawingContext.filter = "none";
+    drawEndingA();
+    return;
+  }
+  if (gameState === "ENDING_B") {
+    drawingContext.filter = "none";
+    drawEndingB();
+    return;
+  }
+
   if (gameState === "EXPLORE") {
     drawBackground();
 
     // Draw required markers BEFORE player so the player renders on top
-    if (world.currentDay === 1) {
+    if (world.currentDay === 1 || world.currentDay === 5) {
       drawRequiredMarkers();
     }
 
@@ -592,7 +658,7 @@ function drawAdminOverlay() {
   fill(255, 220, 100);
   textAlign(LEFT, TOP);
   textSize(6);
-  text("[ prev step   ] next step   1 Day1   3 Day3", 4, 158);
+  text("[ prev step   ] next step   1 Day1   3 Day3   5 Day5", 4, 158);
 }
 
 function keyPressed() {
@@ -601,6 +667,27 @@ function keyPressed() {
     startGame();
     return;
   }
+
+  // ── Ending screens — any key restarts from Day 1 ─────────────────────────
+  if (gameState === "ENDING_A" && endingPhase >= 3) {
+    world.currentDay = 1;
+    restartGame();
+    return;
+  }
+  if (gameState === "ENDING_B" && endingPhase >= 5) {
+    world.currentDay = 1;
+    restartGame();
+    return;
+  }
+
+  // ── Family scene — choice inputs ─────────────────────────────────────────
+  if (gameState === "FAMILY_SCENE" && familyScenePhase >= 7) {
+    if (keyCode === 49) { startEndingA(); return; } // 1 = hold hand → Ending A
+    if (keyCode === 50) { startEndingB(); return; } // 2 = pull away → Ending B
+    return; // ignore other keys during choice
+  }
+  // Block all other input during non-choice family scene phases
+  if (gameState === "FAMILY_SCENE") return;
 
   // Day-start routine popup — Space to dismiss (debounced so same keypress that
   // opens the game can't immediately close it)
@@ -621,7 +708,7 @@ function keyPressed() {
     document.getElementById("npc-name").innerText = "[ADMIN]";
     document.getElementById("dialogue-text").innerText =
       adminMode
-        ? "Admin mode ON — [ prev step, ] next step, 1 = Day 1, 3 = Day 3"
+        ? "Admin mode ON — [ prev step, ] next step, 1=Day1, 3=Day3, 5=Day5"
         : "Admin mode OFF";
     return;
   }
@@ -646,6 +733,11 @@ function keyPressed() {
     // 3 = jump to Day 3
     if (keyCode === 51 && gameState !== "INTERACT") {
       adminJumpToDay(3);
+      return;
+    }
+    // 5 = jump to Day 5
+    if (keyCode === 53 && gameState !== "INTERACT") {
+      adminJumpToDay(5);
       return;
     }
   }
@@ -681,11 +773,17 @@ function keyPressed() {
           document.getElementById("timer-panel").style.visibility = "visible";
         }
 
+        // Day 5: Looking in mirror triggers elderly sprite change
+        if (world.currentDay === 5 && world.sequenceStep === 1 && !day5MirrorDone) {
+          day5MirrorDone           = true;
+          player.useElderlySprite  = true;
+        }
+
         // Mark task as complete
         checklist.markTaskComplete(world.sequenceStep);
 
-        // Check if this step requires observation (Day 3 only)
-        if (world.currentDay === 3 && attentionSystem.triggerObservationUI(world.sequenceStep)) {
+        // Check if this step requires observation (Day 3 AND Day 5 both use this system)
+        if ((world.currentDay === 3 || world.currentDay === 5) && attentionSystem.triggerObservationUI(world.sequenceStep)) {
           isWaitingForObservationChoice = true;
         }
 
@@ -823,6 +921,15 @@ function processSequence() {
       handleGameOver("routine");
       return;
     }
+
+    if (world.currentDay === 5) {
+      // Day 5 ending: trigger family scene instead of day transition
+      document.getElementById("npc-name").innerText = "System";
+      document.getElementById("dialogue-text").innerText = "\u2026";
+      setTimeout(() => startFamilyScene(), 1800);
+      return;
+    }
+
     document.getElementById("npc-name").innerText = "System";
     document.getElementById("dialogue-text").innerText = "Walking away...";
     setTimeout(() => advanceDayToNext(), 2000);
@@ -849,10 +956,10 @@ function processSequence() {
   setTimeout(() => {
     gameState = "EXPLORE";
 
-    if (world.currentDay === 3 && world.sequenceStep === 4) {
+    if ((world.currentDay === 3 || world.currentDay === 5) && world.sequenceStep === 4) {
       document.getElementById("npc-name").innerText = "Partner";
       document.getElementById("dialogue-text").innerText =
-        "You've always had this one.";
+        world.currentDay === 5 ? "You forgot to eat again." : "You've always had this one.";
     } else {
       document.getElementById("npc-name").innerText = "System";
       document.getElementById("dialogue-text").innerText =
@@ -923,46 +1030,107 @@ function updateDialogueForStep(step) {
       npcName.innerText = "Neighbor";
       uiText.innerText = "Your apartment has always been 204.";
     }
+
+  } else if (world.currentDay === 5) {
+    // ── Day 5 — wrong feedback & deeper disorientation ──────────────────
+    if (step === 0) {
+      // Clock triggers wrong thought ("I should make tea")
+      npcName.innerText = "System";
+      uiText.innerText  = "I should make tea.";
+    }
+    if (step === 1) {
+      // Mirror — elderly reflection already in the image
+      npcName.innerText = "System";
+      uiText.innerText  = "Who is that\u2026";
+    }
+    if (step === 3) {
+      // Tea canister triggers confused thought
+      npcName.innerText = "System";
+      uiText.innerText  = "Why am I here?";
+    }
+    if (step === 5) {
+      npcName.innerText = "System";
+      uiText.innerText  = "I can\u2019t read this anymore.";
+    }
+    if (step === 6) {
+      npcName.innerText = "???";
+      uiText.innerText  = "You should eat something.";
+    }
+    if (step === 8) {
+      npcName.innerText = "System";
+      uiText.innerText  = "This\u2026 isn\u2019t my apartment.";
+    }
+    if (step === 9) {
+      npcName.innerText = "???";
+      uiText.innerText  = "Are you alright?";
+    }
   }
 }
 
 function advanceDayToNext() {
+  if (world.currentDay === 1) {
+    // Day 1 → Day 3
+    _transitionToDay(3);
+  } else if (world.currentDay === 3) {
+    // Day 3 → Day 5
+    _transitionToDay(5);
+  }
+}
+
+/**
+ * Internal helper: fade out, show day message, then load the new day.
+ * @param {number} nextDay - 3 or 5
+ */
+function _transitionToDay(nextDay) {
   document.body.style.backgroundColor = "black";
-  document.getElementById("npc-name").innerText = "System";
+  document.getElementById("npc-name").innerText    = "System";
   document.getElementById("dialogue-text").innerText =
-    "Resting... The days blur together.";
+    nextDay === 3 ? "Resting\u2026 The days blur together."
+                  : "Time slips away\u2026";
 
   setTimeout(() => {
-    document.getElementById("dialogue-text").innerText = "Waking up...";
+    document.getElementById("dialogue-text").innerText = "Waking up\u2026";
 
     setTimeout(() => {
-      document.getElementById("dialogue-text").innerText = "Day 3.";
+      document.getElementById("dialogue-text").innerText = "Day " + nextDay + ".";
 
       setTimeout(() => {
         document.body.style.backgroundColor = "";
-        world.resetForNextDay(3);
+        world.resetForNextDay(nextDay);
         player.x = 150;
         player.y = 130;
 
-        // Reset systems for new day
+        // Reset player Day 5 flags
+        player.useElderlySprite  = false;
+        player.wrongDirEnabled   = (nextDay === 5);
+        day5MirrorDone           = false;
+
+        // Reset all systems
         checklist.reset();
-        checklist.minTasksRequired = 4; // Day 3 requires 4 tasks
+        checklist.minTasksRequired =
+          nextDay === 3 ? 4 :
+          nextDay === 5 ? 5 : 3;
+
         timerSystem.reset();
-        if (world.currentDay === 3) {
-          console.log("✓ DAY 3 STARTED - Enabling timer distortion");
+        if (nextDay === 3) {
+          console.log("✓ DAY 3 STARTED — Enabling timer distortion");
           timerSystem.enableDistortion();
         }
+        if (nextDay === 5) {
+          console.log("✓ DAY 5 STARTED — Enabling Day 5 timer mode");
+          timerSystem.enableDay5Mode();
+        }
+
         attentionSystem.reset();
-        setMusicDistortionLevel(0); // reset audio distortion for new day
+        isDistorted = false;
+        isWaitingForObservationChoice = false;
+        setMusicDistortionLevel(nextDay === 5 ? 1 : 0);
 
-        // Update HTML day display
-        document.getElementById("day-display").innerText = "Day 3";
-
-        // Show day-start routine popup before gameplay
+        document.getElementById("day-display").innerText = "Day " + nextDay;
         document.getElementById("checklist-panel").style.visibility = "hidden";
         document.getElementById("attention-panel").style.visibility = "hidden";
-        document.getElementById("timer-panel").style.visibility = "hidden";
-        document.getElementById("npc-name").innerText = "System";
+        document.getElementById("timer-panel").style.visibility     = "hidden";
+        document.getElementById("npc-name").innerText    = "System";
         document.getElementById("dialogue-text").innerText =
           "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
         dayStartPopupTime = millis();
@@ -1033,12 +1201,23 @@ function restartGame() {
   world.resetForNextDay(retryDay);
   player.x = 150;
   player.y = 130;
+
+  // Reset Day 5 flags
+  day5MirrorDone          = false;
+  player.useElderlySprite = false;
+  player.wrongDirEnabled  = (retryDay === 5);
+  familyScenePhase        = 0;
+  endingPhase             = 0;
+
   checklist.reset();
-  checklist.minTasksRequired = (retryDay === 3) ? 4 : 3;
+  checklist.minTasksRequired =
+    retryDay === 3 ? 4 :
+    retryDay === 5 ? 5 : 3;
+
   timerSystem.reset();
-  if (retryDay === 3) {
-    timerSystem.enableDistortion();
-  }
+  if (retryDay === 3) timerSystem.enableDistortion();
+  if (retryDay === 5) timerSystem.enableDay5Mode();
+
   attentionSystem.reset();
   setMusicDistortionLevel(0); // reset audio distortion on restart
   isDistorted = false;
@@ -1196,6 +1375,378 @@ function setMusicDistortionLevel(level) {
     musicLFOGain.gain.linearRampToValueAtTime(0.35,     now + goRamp);
     musicLFO.frequency.linearRampToValueAtTime(1.2,     now + goRamp);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DAY 5 — FAMILY SCENE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kick off the family-scene state (called after staircase on Day 5).
+ */
+function startFamilyScene() {
+  familyScenePhase     = 0;
+  familySceneStartTime = millis();
+  gameState            = "FAMILY_SCENE";
+
+  // Hide all HUD panels so the cinematic is clean
+  document.getElementById("checklist-panel").style.visibility = "hidden";
+  document.getElementById("attention-panel").style.visibility = "hidden";
+  document.getElementById("timer-panel").style.visibility     = "hidden";
+  document.getElementById("npc-name").innerText              = "";
+  document.getElementById("dialogue-text").innerText         = "";
+}
+
+/**
+ * Draw family scene each frame while gameState === "FAMILY_SCENE".
+ * Phases:
+ *   0 — initial fade-in pause
+ *   1,3,5 — "heard" line (what the protagonist hears, distorted)
+ *   2,4,6 — subtitle line (what was actually said)
+ *   7 — choice (hold hand / pull away)
+ */
+function drawFamilyScene() {
+  // Dark bedroom backdrop
+  if (bgImages["Bedroom"]) image(bgImages["Bedroom"], 0, 0, width, height);
+  fill(0, 0, 0, 210);
+  noStroke();
+  rect(0, 0, width, height);
+
+  let now     = millis();
+  let elapsed = now - familySceneStartTime;
+
+  switch (familyScenePhase) {
+    case 0: // Initial pause — dark screen
+      if (elapsed > 900) { familyScenePhase = 1; familySceneStartTime = now; }
+      break;
+
+    case 1: // Heard — line 1
+      _drawHeardText(FAMILY_HEARD[0], 1);
+      if (elapsed > 2600) { familyScenePhase = 2; familySceneStartTime = now; }
+      break;
+
+    case 2: // Subtitle — line 1
+      _drawHeardText(FAMILY_HEARD[0], 0.25);
+      _drawSubtitleText(FAMILY_SUBTITLE[0]);
+      if (elapsed > 2200) { familyScenePhase = 3; familySceneStartTime = now; }
+      break;
+
+    case 3: // Heard — line 2
+      _drawHeardText(FAMILY_HEARD[1], 1);
+      if (elapsed > 2600) { familyScenePhase = 4; familySceneStartTime = now; }
+      break;
+
+    case 4: // Subtitle — line 2
+      _drawHeardText(FAMILY_HEARD[1], 0.25);
+      _drawSubtitleText(FAMILY_SUBTITLE[1]);
+      if (elapsed > 2200) { familyScenePhase = 5; familySceneStartTime = now; }
+      break;
+
+    case 5: // Heard — line 3
+      _drawHeardText(FAMILY_HEARD[2], 1);
+      if (elapsed > 2600) { familyScenePhase = 6; familySceneStartTime = now; }
+      break;
+
+    case 6: // Subtitle — line 3
+      _drawHeardText(FAMILY_HEARD[2], 0.25);
+      _drawSubtitleText(FAMILY_SUBTITLE[2]);
+      if (elapsed > 2200) { familyScenePhase = 7; familySceneStartTime = now; }
+      break;
+
+    case 7: // Choice
+      _drawFamilyChoice();
+      break;
+  }
+}
+
+function _drawHeardText(txt, alphaFactor) {
+  let a = floor(255 * alphaFactor);
+  noStroke();
+  fill(236, 231, 209, a);
+  textAlign(CENTER, CENTER);
+  textStyle(NORMAL);
+  textSize(8.5);
+  text(txt, width / 2, height / 2 - 18);
+}
+
+function _drawSubtitleText(txt) {
+  // Subtitle bar at bottom — grey, bracketed, smaller
+  noStroke();
+  fill(0, 0, 0, 170);
+  rect(18, height - 36, width - 36, 22, 2);
+  fill(175, 175, 158);
+  textAlign(CENTER, CENTER);
+  textSize(7);
+  text("[ " + txt + " ]", width / 2, height - 25);
+}
+
+function _drawFamilyChoice() {
+  noStroke();
+  fill(236, 231, 209, 210);
+  textAlign(CENTER, CENTER);
+  textSize(8);
+  text("A hand reaches toward you.", width / 2, height / 2 - 28);
+
+  // Button: Hold hand
+  fill(138, 118, 80, 220);
+  rect(28, height / 2 - 8, 118, 24, 3);
+  fill(236, 231, 209);
+  textSize(7);
+  text("[ 1 ]  Hold their hand", 87, height / 2 + 4);
+
+  // Button: Pull away
+  fill(80, 65, 50, 220);
+  rect(174, height / 2 - 8, 118, 24, 3);
+  fill(236, 231, 209);
+  text("[ 2 ]  Pull away", 233, height / 2 + 4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENDING A — Acceptance
+// ─────────────────────────────────────────────────────────────────────────────
+
+function startEndingA() {
+  endingPhase     = 0;
+  endingStartTime = millis();
+  gameState       = "ENDING_A";
+  setMusicDistortionLevel(0); // music clears / stabilises
+}
+
+/**
+ * Draw Ending A:
+ *   Phase 0 — screen fades from dark to warm (3 s)
+ *   Phase 1 — "Before I forget…" fades in
+ *   Phase 2 — "Thank you for staying." fades in
+ *   Phase 3 — persistent; any key restarts
+ */
+/**
+ * Ending A — Acceptance
+ * Phase 0: fade from dark to warm bedroom (3 s)
+ * Phase 1: "Before I forget…" fades in slowly
+ * Phase 2: "Thank you for staying." fades in slowly
+ * Phase 3: both lines persist, hint shown
+ *
+ * Dark semi-transparent overlay sits behind the text so it
+ * reads clearly against the background.
+ */
+function drawEndingA() {
+  let now     = millis();
+  let elapsed = now - endingStartTime;
+
+  // Warm bedroom background
+  if (bgImages["Bedroom"]) image(bgImages["Bedroom"], 0, 0, width, height);
+
+  // Very subtle golden warmth tint
+  noStroke();
+  fill(255, 220, 150, 18);
+  rect(0, 0, width, height);
+
+  // ── Phase 0: fade darkness out ───────────────────────────────────────────
+  if (endingPhase === 0) {
+    let darkAlpha = max(0, 210 - (elapsed / 3000) * 210);
+    fill(0, 0, 0, darkAlpha);
+    rect(0, 0, width, height);
+    if (elapsed > 3000) { endingPhase = 1; endingStartTime = now; }
+    return;
+  }
+
+  // ── Phases 1-3: text appears ─────────────────────────────────────────────
+  let line1Alpha = 0;
+  let line2Alpha = 0;
+
+  if (endingPhase === 1) {
+    line1Alpha = min(255, (elapsed / 2800) * 255);
+    if (elapsed > 3500) { endingPhase = 2; endingStartTime = now; }
+  }
+  if (endingPhase === 2) {
+    line1Alpha = 255;
+    line2Alpha = min(255, (elapsed / 2800) * 255);
+    if (elapsed > 3500) { endingPhase = 3; }
+  }
+  if (endingPhase === 3) {
+    line1Alpha = 255;
+    line2Alpha = 255;
+  }
+
+  // ── Dark reading overlay (fades in with the first line) ──────────────────
+  // Full-width semi-transparent band behind the text so it's always legible
+  if (line1Alpha > 0) {
+    let overlayAlpha = map(line1Alpha, 0, 255, 0, 170);
+    noStroke();
+    fill(0, 0, 0, overlayAlpha);
+    rect(0, height / 2 - 38, width, 80);
+
+    // Soft edge lines at top and bottom of band
+    let edgeAlpha = map(line1Alpha, 0, 255, 0, 60);
+    fill(0, 0, 0, edgeAlpha);
+    rect(0, height / 2 - 48, width, 10);
+    rect(0, height / 2 + 42, width, 10);
+  }
+
+  // ── Text ─────────────────────────────────────────────────────────────────
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textStyle(NORMAL);
+
+  // Line 1 — slightly larger, warm cream
+  fill(236, 225, 200, line1Alpha);
+  textSize(10);
+  text("Before I forget\u2026", width / 2, height / 2 - 14);
+
+  // Line 2 — same style, a little smaller
+  fill(220, 208, 182, line2Alpha);
+  textSize(9);
+  text("Thank you for staying.", width / 2, height / 2 + 12);
+
+  // Hint (only when fully settled)
+  if (endingPhase >= 3) {
+    fill(180, 165, 130, 130);
+    textSize(6);
+    text("[ Press any key to play again ]", width / 2, height - 13);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENDING B — Isolation
+// ─────────────────────────────────────────────────────────────────────────────
+
+function startEndingB() {
+  endingPhase     = 0;
+  endingStartTime = millis();
+  gameState       = "ENDING_B";
+  // Put player back in bedroom so the collapse shot makes sense
+  player.x = 148;
+  player.y = 105;
+  setMusicDistortionLevel(3); // world collapses
+}
+
+/**
+ * Ending B — Isolation / Collapse
+ *
+ * Phase 0  (2 s)  — first shudder: mild shake, overexposure floods in
+ * Phase 1-4       — each text fragment appears with escalating shake + RGB split,
+ *                   then dissolves before the next one arrives
+ * Phase 5         — "…" barely holds, maximum shake, player silhouette dissolves
+ *
+ * Visual tools used:
+ *   • Screen shake  — translate(random offset) around the whole scene
+ *   • RGB chromatic aberration — bedroom drawn 3× with R/B tint offsets
+ *   • Oscillating white flash  — sin-wave overexposure that pulses faster as we go
+ *   • Player drawn at near-zero clarity — maximum sprite glitch / flicker
+ *   • Text itself jitters on its own axis (extra translate inside text draw)
+ */
+function drawEndingB() {
+  let now     = millis();
+  let elapsed = now - endingStartTime;
+
+  // ── Shake intensity grows with each phase ────────────────────────────────
+  let shakeAmt = endingPhase === 0
+    ? map(elapsed, 0, 2000, 0.5, 3)
+    : min(10, 2.5 + endingPhase * 1.8);
+
+  let sx = random(-shakeAmt,       shakeAmt);
+  let sy = random(-shakeAmt * 0.6, shakeAmt * 0.6);
+
+  // ── Draw bedroom — with RGB chromatic aberration from phase 1 onward ─────
+  if (bgImages["Bedroom"]) {
+    if (endingPhase >= 1) {
+      let split = 2 + endingPhase * 1.2;
+      // Red channel — shift right
+      tint(255, 80, 80, 130);
+      image(bgImages["Bedroom"], sx + split, sy,        width, height);
+      // Blue channel — shift left
+      tint(80, 80, 255, 130);
+      image(bgImages["Bedroom"], sx - split, sy + 1.5,  width, height);
+      noTint();
+    }
+    // Base image on top
+    image(bgImages["Bedroom"], sx, sy, width, height);
+  }
+
+  // ── Draw player with maximum glitch (clarity ≈ 0) ────────────────────────
+  if (endingPhase >= 1) {
+    let playerClarity = max(0, 0.08 - endingPhase * 0.015); // approaches 0
+    push();
+    translate(sx * 1.6, sy * 1.6);   // player shakes harder than background
+    player.draw(playerClarity);
+    pop();
+  }
+
+  // ── Oscillating white overexposure ───────────────────────────────────────
+  // Pulses faster and brighter as phases advance
+  let pulseSpeed  = 0.003 + endingPhase * 0.0025;
+  let pulseDepth  = endingPhase === 0 ? 0 : 35 + endingPhase * 10;
+  let baseWhite   = endingPhase === 0
+    ? min(180, (elapsed / 2000) * 180)
+    : 140 + endingPhase * 12;
+  let whiteAlpha  = min(255, baseWhite + sin(now * pulseSpeed * TWO_PI) * pulseDepth
+                              + random(-8, 8));
+  noStroke();
+  fill(255, 255, 255, whiteAlpha);
+  rect(0, 0, width, height);
+
+  // ── Phase 0: initial flooding — no text yet ───────────────────────────────
+  if (endingPhase === 0) {
+    if (elapsed > 2000) { endingPhase = 1; endingStartTime = now; }
+    return;
+  }
+
+  // ── Phases 1-4: text fragments ───────────────────────────────────────────
+  if (endingPhase >= 1 && endingPhase <= 4) {
+    let fragIdx = endingPhase - 1;
+    let t       = elapsed / 1600;             // 0 → 1 over 1.6 s
+
+    // Fade in then dissolve (last fragment "Forget" stays a bit longer)
+    let fragAlpha;
+    let holdDuration = fragIdx === 2 ? 2000 : 1600; // "Forget" lingers longer
+
+    if (t < 0.4) {
+      fragAlpha = map(t, 0, 0.4, 0, 255);    // appear
+    } else if (fragIdx < 3 && t > 0.75) {
+      fragAlpha = map(t, 0.75, 1, 255, 0);   // dissolve (not "…")
+    } else {
+      fragAlpha = 255;
+    }
+    fragAlpha = constrain(fragAlpha, 0, 255);
+
+    // Text own jitter (independent of screen shake)
+    let tx = random(-(endingPhase), endingPhase);
+    let ty = random(-(endingPhase * 0.5), endingPhase * 0.5);
+
+    push();
+    translate(tx, ty);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textStyle(NORMAL);
+    // Size grows as things fall apart
+    textSize(13 + endingPhase * 0.8);
+    fill(45, 30, 15, fragAlpha);
+    text(ENDING_B_FRAGMENTS[fragIdx], width / 2, height / 2);
+    pop();
+
+    if (elapsed > holdDuration) { endingPhase++; endingStartTime = now; }
+    return;
+  }
+
+  // ── Phase 5: "…" barely holds — maximum collapse ─────────────────────────
+  push();
+  translate(random(-9, 9), random(-5, 5));
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  // Alpha flickers erratically
+  fill(45, 30, 15, 120 + random(-50, 50));
+  text("\u2026", width / 2, height / 2);
+  pop();
+
+  // Hint — faint, shaking
+  push();
+  translate(random(-3, 3), random(-2, 2));
+  fill(45, 30, 15, 70);
+  textSize(6);
+  textAlign(CENTER, CENTER);
+  text("[ Press any key to play again ]", width / 2, height - 13);
+  pop();
 }
 
 // --- DEBUG DRAW ---
