@@ -31,6 +31,17 @@ let elderlySprites = {
   right: [],
 };
 
+// --- Loading progress ---
+let _loadedCount = 0;
+const _totalAssets = 46; // total loadImage() calls across all loops
+
+function _onAssetLoad() {
+  _loadedCount++;
+  const pct = Math.min(100, (_loadedCount / _totalAssets) * 100);
+  const fill = document.getElementById("loading-bar-fill");
+  if (fill) fill.style.width = pct + "%";
+}
+
 // --- DEBUG OPTION ---
 let showDebug = false;
 
@@ -341,51 +352,51 @@ const items = [
 ];
 
 function preload() {
-  bgImages.Bedroom = loadImage("assets/bg_bedroom.png");
-  bgImages.Kitchen = loadImage("assets/bg_kitchen.png");
-  bgImages.LivingRoom = loadImage("assets/bg_livingroom.png");
-  bgImages.Outside = loadImage("assets/bg_outside.jpg");
+  bgImages.Bedroom   = loadImage("assets/bg_bedroom.png",    _onAssetLoad, _onAssetLoad);
+  bgImages.Kitchen   = loadImage("assets/bg_kitchen.png",    _onAssetLoad, _onAssetLoad);
+  bgImages.LivingRoom= loadImage("assets/bg_livingroom.png", _onAssetLoad, _onAssetLoad);
+  bgImages.Outside   = loadImage("assets/bg_outside.jpg",    _onAssetLoad, _onAssetLoad);
 
   // --- Day 1 图片 ---
-  uiImages.day1[0] = loadImage("assets/ui_clock.png");
-  uiImages.day1[1] = loadImage("assets/ui_mirror.png");
-  uiImages.day1[3] = loadImage("assets/ui_tea.png");
-  uiImages.day1[5] = loadImage("assets/ui_news.png");
-  uiImages.day1[6] = loadImage("assets/ui_partner.png");
-  uiImages.day1[8] = loadImage("assets/ui_door204.png");
-  uiImages.day1[9] = loadImage("assets/ui_neighbor.png");
+  uiImages.day1[0] = loadImage("assets/ui_clock.png",    _onAssetLoad, _onAssetLoad);
+  uiImages.day1[1] = loadImage("assets/ui_mirror.png",   _onAssetLoad, _onAssetLoad);
+  uiImages.day1[3] = loadImage("assets/ui_tea.png",      _onAssetLoad, _onAssetLoad);
+  uiImages.day1[5] = loadImage("assets/ui_news.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day1[6] = loadImage("assets/ui_partner.png",  _onAssetLoad, _onAssetLoad);
+  uiImages.day1[8] = loadImage("assets/ui_door204.png",  _onAssetLoad, _onAssetLoad);
+  uiImages.day1[9] = loadImage("assets/ui_neighbor.png", _onAssetLoad, _onAssetLoad);
 
   // --- Day 3 图片 ---
-  uiImages.day3[0] = loadImage("assets/ui_clock_day3.png"); // 模糊闹钟
-  uiImages.day3[1] = loadImage("assets/ui_mirror_day3.png"); // 老爷爷照镜子全屏图
-  uiImages.day3[3] = loadImage("assets/ui_tea_day3.png");
-  uiImages.day3[5] = loadImage("assets/ui_news_day3.png");
-  uiImages.day3[6] = loadImage("assets/ui_partner.png");
-  uiImages.day3[8] = loadImage("assets/ui_door204_day3.png");
-  uiImages.day3[9] = loadImage("assets/ui_neighbor.png");
+  uiImages.day3[0] = loadImage("assets/ui_clock_day3.png",   _onAssetLoad, _onAssetLoad);
+  uiImages.day3[1] = loadImage("assets/ui_mirror_day3.png",  _onAssetLoad, _onAssetLoad);
+  uiImages.day3[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day3[5] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
+  uiImages.day3[6] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
+  uiImages.day3[8] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
+  uiImages.day3[9] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
 
-  // --- Day 5 图片 (reuse day3 assets — same objects, deeper decline) ---
-  uiImages.day5[0] = loadImage("assets/ui_clock_day3.png");   // alarm — wrong feedback
-  uiImages.day5[1] = loadImage("assets/ui_mirror_day5.png");  // mirror — elderly reflection
-  uiImages.day5[3] = loadImage("assets/ui_tea_day3.png");     // tea — wrong feedback
-  uiImages.day5[5] = loadImage("assets/ui_news_day3.png");
-  uiImages.day5[6] = loadImage("assets/ui_partner.png");
-  uiImages.day5[8] = loadImage("assets/ui_door204_day3.png");
-  uiImages.day5[9] = loadImage("assets/ui_neighbor.png");
+  // --- Day 5 图片 ---
+  uiImages.day5[0] = loadImage("assets/ui_clock_day3.png",   _onAssetLoad, _onAssetLoad);
+  uiImages.day5[1] = loadImage("assets/ui_mirror_day5.png",  _onAssetLoad, _onAssetLoad);
+  uiImages.day5[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day5[5] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
+  uiImages.day5[6] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
+  uiImages.day5[8] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
+  uiImages.day5[9] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
 
   // 🚨 注意这里的后缀全部改成了大写 .PNG 🚨
   for (let i = 1; i <= 3; i++) {
-    playerSprites.down.push(loadImage(`assets/Front${i}.PNG`));
-    playerSprites.up.push(loadImage(`assets/Back${i}.PNG`));
-    playerSprites.left.push(loadImage(`assets/Left${i}.PNG`));
-    playerSprites.right.push(loadImage(`assets/Right${i}.PNG`));
+    playerSprites.down.push(loadImage(`assets/Front${i}.PNG`,  _onAssetLoad, _onAssetLoad));
+    playerSprites.up.push(  loadImage(`assets/Back${i}.PNG`,   _onAssetLoad, _onAssetLoad));
+    playerSprites.left.push(loadImage(`assets/Left${i}.PNG`,   _onAssetLoad, _onAssetLoad));
+    playerSprites.right.push(loadImage(`assets/Right${i}.PNG`, _onAssetLoad, _onAssetLoad));
   }
 
   // Elderly sprites — Day 5 mirror swap
   for (let i = 1; i <= 3; i++) {
-    elderlySprites.down.push(loadImage(`assets/OldFront${i}.jpg`));
-    elderlySprites.left.push(loadImage(`assets/OldLeft${i}.jpg`));
-    elderlySprites.right.push(loadImage(`assets/OldRight${i}.jpg`));
+    elderlySprites.down.push( loadImage(`assets/OldFront${i}.jpg`, _onAssetLoad, _onAssetLoad));
+    elderlySprites.left.push( loadImage(`assets/OldLeft${i}.jpg`,  _onAssetLoad, _onAssetLoad));
+    elderlySprites.right.push(loadImage(`assets/OldRight${i}.jpg`, _onAssetLoad, _onAssetLoad));
   }
 }
 
@@ -393,6 +404,18 @@ function setup() {
   let canvas = createCanvas(320, 180);
   canvas.parent("canvas-holder");
   noSmooth();
+
+  // All assets are loaded — fade out loading screen
+  const loadingScreen = document.getElementById("loading-screen");
+  if (loadingScreen) {
+    // Ensure bar shows 100% briefly before fading
+    const fill = document.getElementById("loading-bar-fill");
+    if (fill) fill.style.width = "100%";
+    setTimeout(() => {
+      loadingScreen.classList.add("hide");
+      setTimeout(() => loadingScreen.style.display = "none", 750);
+    }, 300);
+  }
 
   world = new WorldLevel();
   player = new Player(150, 130, 20, 20);
