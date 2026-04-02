@@ -24,6 +24,13 @@ let playerSprites = {
   right: [],
 };
 
+// Elderly sprites for Day 5 (loaded in preload)
+let elderlySprites = {
+  down: [],
+  left: [],
+  right: [],
+};
+
 // --- DEBUG OPTION ---
 let showDebug = false;
 
@@ -375,6 +382,13 @@ function preload() {
     playerSprites.up.push(loadImage(`assets/Back${i}.PNG`));
     playerSprites.left.push(loadImage(`assets/Left${i}.PNG`));
     playerSprites.right.push(loadImage(`assets/Right${i}.PNG`));
+  }
+
+  // Elderly sprites — Day 5 mirror swap
+  for (let i = 1; i <= 3; i++) {
+    elderlySprites.down.push(loadImage(`assets/OldFront${i}.jpg`));
+    elderlySprites.left.push(loadImage(`assets/OldLeft${i}.jpg`));
+    elderlySprites.right.push(loadImage(`assets/OldRight${i}.jpg`));
   }
 }
 
@@ -1039,9 +1053,15 @@ function updateDialogueForStep(step) {
       uiText.innerText  = "I should make tea.";
     }
     if (step === 1) {
-      // Mirror — elderly reflection already in the image
+      // Mirror — elderly reflection, sprite swap already triggered
       npcName.innerText = "System";
       uiText.innerText  = "Who is that\u2026";
+      // After a beat, show recognition
+      setTimeout(() => {
+        if (gameState === "INTERACT") {
+          uiText.innerText = "Oh. That\u2019s\u2026 that\u2019s me.";
+        }
+      }, 2200);
     }
     if (step === 3) {
       // Tea canister triggers confused thought
