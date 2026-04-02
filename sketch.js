@@ -366,7 +366,7 @@ function preload() {
 
   // --- Day 5 图片 (reuse day3 assets — same objects, deeper decline) ---
   uiImages.day5[0] = loadImage("assets/ui_clock_day3.png");   // alarm — wrong feedback
-  uiImages.day5[1] = loadImage("assets/ui_mirror_day3.png");  // mirror — elderly reflection
+  uiImages.day5[1] = loadImage("assets/ui_mirror_day5.png");  // mirror — elderly reflection
   uiImages.day5[3] = loadImage("assets/ui_tea_day3.png");     // tea — wrong feedback
   uiImages.day5[5] = loadImage("assets/ui_news_day3.png");
   uiImages.day5[6] = loadImage("assets/ui_partner.png");
