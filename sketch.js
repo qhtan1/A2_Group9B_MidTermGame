@@ -90,7 +90,7 @@ function adminJumpToDay(day) {
   // Reset Day 5 flags
   day5MirrorDone          = false;
   player.useElderlySprite = false;
-  player.wrongDirEnabled  = (day === 5);
+  player.wrongDirEnabled  = false;
 
   // Reset ending/family scene state
   familyScenePhase = 0;
@@ -99,12 +99,9 @@ function adminJumpToDay(day) {
   const modal = document.getElementById("observation-modal");
   if (modal) modal.classList.remove("show");
 
-  if (day === 3) timerSystem.enableDistortion();
-  if (day === 5) timerSystem.enableDay5Mode();
+  if (day === 3 || day === 5) timerSystem.enableDistortion();
 
-  checklist.minTasksRequired =
-    day === 3 ? 4 :
-    day === 5 ? 5 : 3;
+  checklist.minTasksRequired = (day === 3 || day === 5) ? 4 : 3;
 
   // Restore hidden panels for gameplay
   document.getElementById("checklist-panel").style.visibility = "visible";
@@ -972,8 +969,7 @@ function processSequence() {
 
     if ((world.currentDay === 3 || world.currentDay === 5) && world.sequenceStep === 4) {
       document.getElementById("npc-name").innerText = "Partner";
-      document.getElementById("dialogue-text").innerText =
-        world.currentDay === 5 ? "You forgot to eat again." : "You've always had this one.";
+      document.getElementById("dialogue-text").innerText = "You've always had this one.";
     } else {
       document.getElementById("npc-name").innerText = "System";
       document.getElementById("dialogue-text").innerText =
@@ -1046,17 +1042,15 @@ function updateDialogueForStep(step) {
     }
 
   } else if (world.currentDay === 5) {
-    // ── Day 5 — wrong feedback & deeper disorientation ──────────────────
+    // ── Day 5 — same mechanics as Day 3; mirror triggers sprite swap ──────
     if (step === 0) {
-      // Clock triggers wrong thought ("I should make tea")
       npcName.innerText = "System";
-      uiText.innerText  = "I should make tea.";
+      uiText.innerText  = "7:00\u2026 I need to leave before 7:40\u2026 I think.";
     }
     if (step === 1) {
-      // Mirror — elderly reflection, sprite swap already triggered
+      // Mirror — sprite has just swapped to elderly; two-beat recognition
       npcName.innerText = "System";
       uiText.innerText  = "Who is that\u2026";
-      // After a beat, show recognition
       setTimeout(() => {
         if (gameState === "INTERACT") {
           uiText.innerText = "Oh. That\u2019s\u2026 that\u2019s me.";
@@ -1064,25 +1058,24 @@ function updateDialogueForStep(step) {
       }, 2200);
     }
     if (step === 3) {
-      // Tea canister triggers confused thought
       npcName.innerText = "System";
-      uiText.innerText  = "Why am I here?";
+      uiText.innerText  = "The tea tin... it looks the same as always.";
     }
     if (step === 5) {
       npcName.innerText = "System";
-      uiText.innerText  = "I can\u2019t read this anymore.";
+      uiText.innerText  = "The letters look\u2026 different. Or maybe it\u2019s just me.";
     }
     if (step === 6) {
-      npcName.innerText = "???";
-      uiText.innerText  = "You should eat something.";
+      npcName.innerText = "Partner";
+      uiText.innerText  = "Is there anything in the news?";
     }
     if (step === 8) {
       npcName.innerText = "System";
-      uiText.innerText  = "This\u2026 isn\u2019t my apartment.";
+      uiText.innerText  = "Apartment... 20?";
     }
     if (step === 9) {
-      npcName.innerText = "???";
-      uiText.innerText  = "Are you alright?";
+      npcName.innerText = "Neighbor";
+      uiText.innerText  = "Your apartment has always been 204.";
     }
   }
 }
@@ -1124,31 +1117,25 @@ function _transitionToDay(nextDay) {
         player.x = 150;
         player.y = 130;
 
-        // Reset player Day 5 flags
+        // Reset player flags (Day 5 sprite swap resets each attempt)
         player.useElderlySprite  = false;
-        player.wrongDirEnabled   = (nextDay === 5);
+        player.wrongDirEnabled   = false;
         day5MirrorDone           = false;
 
-        // Reset all systems
+        // Reset all systems — Day 3 and Day 5 share the same mechanics
         checklist.reset();
-        checklist.minTasksRequired =
-          nextDay === 3 ? 4 :
-          nextDay === 5 ? 5 : 3;
+        checklist.minTasksRequired = (nextDay === 3 || nextDay === 5) ? 4 : 3;
 
         timerSystem.reset();
-        if (nextDay === 3) {
-          console.log("✓ DAY 3 STARTED — Enabling timer distortion");
+        if (nextDay === 3 || nextDay === 5) {
+          console.log("✓ DAY " + nextDay + " STARTED — Enabling timer distortion");
           timerSystem.enableDistortion();
-        }
-        if (nextDay === 5) {
-          console.log("✓ DAY 5 STARTED — Enabling Day 5 timer mode");
-          timerSystem.enableDay5Mode();
         }
 
         attentionSystem.reset();
         isDistorted = false;
         isWaitingForObservationChoice = false;
-        setMusicDistortionLevel(nextDay === 5 ? 1 : 0);
+        setMusicDistortionLevel(0);
 
         document.getElementById("day-display").innerText = "Day " + nextDay;
         document.getElementById("checklist-panel").style.visibility = "hidden";
