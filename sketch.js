@@ -622,11 +622,6 @@ function drawRequiredMarkers() {
   strokeWeight(2);
   fill(markerColor);
 
-  // Alarm clock — Bedroom, only before it's been checked
-  if (world.currentRoom === "Bedroom" && !checklist.isTaskComplete(0)) {
-    text("!", 116, 53 + bob);
-  }
-
   // Newspaper — LivingRoom, only before it's been read
   if (world.currentRoom === "LivingRoom" && !checklist.isTaskComplete(5)) {
     text("!", 195, 112 + bob);
@@ -698,6 +693,8 @@ function keyPressed() {
       document.getElementById("npc-name").innerText = "System";
       document.getElementById("dialogue-text").innerText =
         "Use WASD or Arrows to explore.";
+      // Start looping alarm — stops when player interacts with alarm clock
+      document.getElementById("alarm-sound").play();
     }
     return;
   }
@@ -767,10 +764,13 @@ function keyPressed() {
 
         gameState = "INTERACT";
 
-        // Start timer on first interaction (alarm clock)
+        // Start timer on first interaction (alarm clock) and stop alarm sound
         if (world.sequenceStep === 0) {
           timerSystem.start();
           document.getElementById("timer-panel").style.visibility = "visible";
+          const alarmEl = document.getElementById("alarm-sound");
+          alarmEl.pause();
+          alarmEl.currentTime = 0;
         }
 
         // Day 5: Looking in mirror triggers elderly sprite change
@@ -1068,6 +1068,10 @@ function updateDialogueForStep(step) {
 }
 
 function advanceDayToNext() {
+  // Stop alarm sound in case player left before interacting with it
+  const _ad = document.getElementById("alarm-sound");
+  _ad.pause(); _ad.currentTime = 0;
+
   if (world.currentDay === 1) {
     // Day 1 → Day 3
     _transitionToDay(3);
@@ -1220,6 +1224,8 @@ function restartGame() {
 
   attentionSystem.reset();
   setMusicDistortionLevel(0); // reset audio distortion on restart
+  const _alarmEl = document.getElementById("alarm-sound");
+  _alarmEl.pause(); _alarmEl.currentTime = 0; // stop alarm on restart
   isDistorted = false;
   isWaitingForObservationChoice = false;
 
