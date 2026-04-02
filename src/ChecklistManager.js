@@ -5,10 +5,10 @@ class ChecklistManager {
       0: "Check the alarm clock",
       1: "Look in the mirror",
       3: "Brew tea",
-      5: "Read the newspaper",
-      6: "Talk to partner",
-      8: "Check the door number",
-      9: "Greet the neighbor",
+      5: "Talk to partner",
+      6: "Read the newspaper",
+      8: "Greet the neighbor",
+      9: "Check the door number",
     };
 
     // Track which tasks are completed

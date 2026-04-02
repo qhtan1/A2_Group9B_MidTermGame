@@ -298,20 +298,20 @@ const items = [
   {
     step: 5,
     room: "LivingRoom",
-    x: 195,
-    y: 125,
-    name: "Newspaper",
-    type: "popup",
-    hint: "Press 'E' to read news",
-  },
-  {
-    step: 6,
-    room: "LivingRoom",
     x: 257,
     y: 95,
     name: "Partner",
     type: "popup",
     hint: "Press 'E' to talk to partner",
+  },
+  {
+    step: 6,
+    room: "LivingRoom",
+    x: 195,
+    y: 125,
+    name: "Newspaper",
+    type: "popup",
+    hint: "Press 'E' to read news",
   },
   {
     step: 7,
@@ -325,20 +325,20 @@ const items = [
   {
     step: 8,
     room: "Outside",
-    x: 155,
-    y: 55,
-    name: "Doorplate 204",
-    type: "popup",
-    hint: "Press 'E' to check door number",
-  },
-  {
-    step: 9,
-    room: "Outside",
     x: 220,
     y: 50,
     name: "Neighbor",
     type: "popup",
     hint: "Press 'E' to greet neighbor",
+  },
+  {
+    step: 9,
+    room: "Outside",
+    x: 155,
+    y: 55,
+    name: "Doorplate 204",
+    type: "popup",
+    hint: "Press 'E' to check door number",
   },
   {
     step: 10,
@@ -361,28 +361,28 @@ function preload() {
   uiImages.day1[0] = loadImage("assets/ui_clock.png",    _onAssetLoad, _onAssetLoad);
   uiImages.day1[1] = loadImage("assets/ui_mirror.png",   _onAssetLoad, _onAssetLoad);
   uiImages.day1[3] = loadImage("assets/ui_tea.png",      _onAssetLoad, _onAssetLoad);
-  uiImages.day1[5] = loadImage("assets/ui_news.png",     _onAssetLoad, _onAssetLoad);
-  uiImages.day1[6] = loadImage("assets/ui_partner.png",  _onAssetLoad, _onAssetLoad);
-  uiImages.day1[8] = loadImage("assets/ui_door204.png",  _onAssetLoad, _onAssetLoad);
-  uiImages.day1[9] = loadImage("assets/ui_neighbor.png", _onAssetLoad, _onAssetLoad);
+  uiImages.day1[5] = loadImage("assets/ui_partner.png",  _onAssetLoad, _onAssetLoad);
+  uiImages.day1[6] = loadImage("assets/ui_news.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day1[8] = loadImage("assets/ui_neighbor.png", _onAssetLoad, _onAssetLoad);
+  uiImages.day1[9] = loadImage("assets/ui_door204.png",  _onAssetLoad, _onAssetLoad);
 
   // --- Day 3 图片 ---
   uiImages.day3[0] = loadImage("assets/ui_clock_day3.png",   _onAssetLoad, _onAssetLoad);
   uiImages.day3[1] = loadImage("assets/ui_mirror_day3.png",  _onAssetLoad, _onAssetLoad);
   uiImages.day3[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
-  uiImages.day3[5] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
-  uiImages.day3[6] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
-  uiImages.day3[8] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
-  uiImages.day3[9] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day3[5] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
+  uiImages.day3[6] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
+  uiImages.day3[8] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day3[9] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
 
   // --- Day 5 图片 ---
   uiImages.day5[0] = loadImage("assets/ui_clock_day3.png",   _onAssetLoad, _onAssetLoad);
   uiImages.day5[1] = loadImage("assets/ui_mirror_day5.png",  _onAssetLoad, _onAssetLoad);
   uiImages.day5[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
-  uiImages.day5[5] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
-  uiImages.day5[6] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
-  uiImages.day5[8] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
-  uiImages.day5[9] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day5[5] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
+  // day5[6] is drawn as messy text — no image needed
+  uiImages.day5[8] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day5[9] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
 
   // 🚨 注意这里的后缀全部改成了大写 .PNG 🚨
   for (let i = 1; i <= 3; i++) {
@@ -576,13 +576,12 @@ function checkInteractions() {
 
   // Steps that are navigation-required (cannot skip to a door/exit).
   // Alarm (step 0): must interact before leaving the bedroom — all days.
-  // Mirror (step 1, Day 3 & 5): required so the door never overrides it — the
-  //   observation / sprite-swap moment is too important to accidentally skip.
-  // Newspaper (step 5, Day 1 only): must read before leaving the living room.
+  // Mirror (step 1, Day 3 only): required so the door never overrides it.
+  // Newspaper (step 6, Day 1 only): must read before leaving the living room.
   let stepIsRequired =
     world.sequenceStep === 0 ||
-    (world.sequenceStep === 1 && (world.currentDay === 3 || world.currentDay === 5)) ||
-    (world.sequenceStep === 5 && world.currentDay === 1);
+    (world.sequenceStep === 1 && world.currentDay === 3) ||
+    (world.sequenceStep === 6 && world.currentDay === 1);
 
   // If the current step is an optional popup, also check whether the next
   // door/exit in this room is reachable so the player can skip it.
@@ -659,8 +658,8 @@ function drawRequiredMarkers() {
   strokeWeight(2);
   fill(markerColor);
 
-  // Newspaper — LivingRoom, only before it's been read
-  if (world.currentRoom === "LivingRoom" && !checklist.isTaskComplete(5)) {
+  // Newspaper — LivingRoom, only before it's been read (now step 6)
+  if (world.currentRoom === "LivingRoom" && !checklist.isTaskComplete(6)) {
     text("!", 195, 112 + bob);
   }
 
@@ -787,8 +786,8 @@ function keyPressed() {
       if (activeTarget.type === "popup") {
         // Order-death: interacting out of sequence causes instant death.
         //   Mirror (step 1) before alarm (step 0)
-        //   Partner (step 6) before newspaper (step 5)
-        //   Neighbor (step 9) before doorplate (step 8)
+        //   Newspaper (step 6) before partner (step 5)
+        //   Doorplate (step 9) before neighbor (step 8)
         if (activeTarget.step === 1 && !checklist.isTaskComplete(0)) {
           handleGameOver("order"); return;
         }
@@ -808,12 +807,6 @@ function keyPressed() {
           const alarmEl = document.getElementById("alarm-sound");
           alarmEl.pause();
           alarmEl.currentTime = 0;
-        }
-
-        // Day 5: Looking in mirror triggers elderly sprite change
-        if (world.currentDay === 5 && world.sequenceStep === 1 && !day5MirrorDone) {
-          day5MirrorDone           = true;
-          player.useElderlySprite  = true;
         }
 
         // Mark task as complete
@@ -858,6 +851,18 @@ function drawUIPopup() {
   let dayKey = "day" + world.currentDay;
   let img = uiImages[dayKey][world.sequenceStep];
 
+  // Day 5 newspaper (step 6) uses hand-drawn messy text instead of an image
+  if (world.currentDay === 5 && world.sequenceStep === 6) {
+    drawDay5Letter();
+    fill(0, 0, 0, 150);
+    rect(0, height - 20, width, 20);
+    fill("#ECE7D1");
+    textAlign(CENTER, CENTER);
+    textSize(8);
+    text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
+    return;
+  }
+
   push();
 
   // 茶罐抖动效果保持
@@ -879,6 +884,87 @@ function drawUIPopup() {
     text("[ 1: Something is wrong   |   2: Looks normal ]", width / 2, height - 10);
   } else {
     text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
+  }
+}
+
+function drawDay5Letter() {
+  // Parchment background
+  fill(245, 238, 210);
+  noStroke();
+  rect(0, 0, width, height);
+
+  // Faint ruled lines
+  stroke(190, 178, 150, 55);
+  strokeWeight(0.4);
+  for (let y = 36; y < height - 20; y += 13) {
+    line(10, y, width - 10, y);
+  }
+  noStroke();
+
+  // Newspaper masthead
+  fill(55, 40, 25);
+  textAlign(CENTER, TOP);
+  textSize(9);
+  text("THE MORNING HERALD", width / 2, 11);
+  stroke(55, 40, 25);
+  strokeWeight(0.5);
+  line(10, 24, width - 10, 24);
+  noStroke();
+
+  // Article body text
+  const lines = [
+    "Spring arrives in the city.",
+    "Local gardens are blooming",
+    "across all neighborhoods.",
+    "Annual flower festival",
+    "returns this weekend with",
+    "familiar faces and old",
+    "traditions. Residents gather",
+    "as they always have done.",
+  ];
+
+  textAlign(LEFT, TOP);
+  textSize(7);
+
+  let startY = 31;
+  let lineHeight = 13;
+  let t = millis() * 0.0009; // slow animated wobble
+
+  for (let li = 0; li < lines.length; li++) {
+    let lineStr = lines[li];
+    let cx = 14;
+    let baseY = startY + li * lineHeight;
+
+    for (let ci = 0; ci < lineStr.length; ci++) {
+      let ch = lineStr[ci];
+
+      // Consistent per-character distortion via hash-like offset
+      let h1 = (li * 31 + ci * 17 + 7) % 100;
+      let h2 = (li * 13 + ci * 29 + 3) % 100;
+      let h3 = (li * 7  + ci * 11 + 19) % 100;
+
+      let baseDx    = (h1 / 100 - 0.5) * 4.5;
+      let baseDy    = (h2 / 100 - 0.5) * 3.5;
+      let baseAngle = (h3 / 100 - 0.5) * 0.65;
+
+      // Slow per-character wobble
+      let wx = sin(t * 1.4 + li * 0.8 + ci * 0.45) * 0.7;
+      let wy = cos(t * 1.1 + ci * 0.55 + li * 0.3) * 0.5;
+      let wa = sin(t + ci * 0.22 + li * 0.6) * 0.04;
+
+      let colVar = h1 % 35;
+
+      push();
+      translate(cx + baseDx + wx, baseY + baseDy + wy);
+      rotate(baseAngle + wa);
+      fill(45 + colVar, 28 + colVar * 0.4, 12);
+      text(ch, 0, 0);
+      pop();
+
+      // Advance x by a slightly jittered character width
+      let jitter = (h2 % 10) * 0.08 - 0.3;
+      cx += textWidth(ch) + jitter;
+    }
   }
 }
 
@@ -916,10 +1002,10 @@ function drawDayStartPopup() {
     "Check alarm",
     "Look at mirror",
     "Brew tea",
-    "Read news",
     "Talk to partner",
-    "Check door number",
+    "Read news",
     "Greet neighbor",
+    "Check door number",
   ];
 
   for (let i = 0; i < tasks.length; i++) {
@@ -975,6 +1061,11 @@ function processSequence() {
 
   world.advanceSequence();
 
+  // Day 5: mirror (step 1) cannot be interacted with — auto-skip it
+  if (world.sequenceStep === 1 && world.currentDay === 5) {
+    world.advanceSequence();
+  }
+
   if (world.sequenceStep === 3) {
     world.changeRoom("Kitchen");
     player.x = 160;
@@ -1022,20 +1113,20 @@ function updateDialogueForStep(step) {
       uiText.innerText = "A familiar tea canister.";
     }
     if (step === 5) {
-      npcName.innerText = "System";
-      uiText.innerText = "Today\u2019s paper\u2026 Oh\u2026 eggs are on sale today. I should leave before 7:40.";
-    }
-    if (step === 6) {
       npcName.innerText = "Partner";
       uiText.innerText = "How are you feeling today?";
     }
-    if (step === 8) {
+    if (step === 6) {
       npcName.innerText = "System";
-      uiText.innerText = "Apartment 204.";
+      uiText.innerText = "Today\u2019s paper\u2026 Oh\u2026 eggs are on sale today. I should leave before 7:40.";
     }
-    if (step === 9) {
+    if (step === 8) {
       npcName.innerText = "Neighbor";
       uiText.innerText = "Good morning.";
+    }
+    if (step === 9) {
+      npcName.innerText = "System";
+      uiText.innerText = "Apartment 204.";
     }
   } else if (world.currentDay === 3) {
     if (step === 0) {
@@ -1051,20 +1142,20 @@ function updateDialogueForStep(step) {
       uiText.innerText = "The tea tin... it looks the same as always.";
     }
     if (step === 5) {
-      npcName.innerText = "System";
-      uiText.innerText = "The letters look\u2026 different. Or maybe it\u2019s just me.";
-    }
-    if (step === 6) {
       npcName.innerText = "Partner";
       uiText.innerText = "Is there anything in the news?";
     }
-    if (step === 8) {
+    if (step === 6) {
       npcName.innerText = "System";
-      uiText.innerText = "Apartment... 20?";
+      uiText.innerText = "The letters look\u2026 different. Or maybe it\u2019s just me.";
     }
-    if (step === 9) {
+    if (step === 8) {
       npcName.innerText = "Neighbor";
       uiText.innerText = "Your apartment has always been 204.";
+    }
+    if (step === 9) {
+      npcName.innerText = "System";
+      uiText.innerText = "Apartment... 20?";
     }
 
   } else if (world.currentDay === 5) {
@@ -1073,35 +1164,25 @@ function updateDialogueForStep(step) {
       npcName.innerText = "System";
       uiText.innerText  = "7:00\u2026 I need to leave before 7:40\u2026 I think.";
     }
-    if (step === 1) {
-      // Mirror — sprite has just swapped to elderly; two-beat recognition
-      npcName.innerText = "System";
-      uiText.innerText  = "Who is that\u2026";
-      setTimeout(() => {
-        if (gameState === "INTERACT") {
-          uiText.innerText = "Oh. That\u2019s\u2026 that\u2019s me.";
-        }
-      }, 2200);
-    }
     if (step === 3) {
       npcName.innerText = "System";
       uiText.innerText  = "The tea tin... it looks the same as always.";
     }
     if (step === 5) {
-      npcName.innerText = "System";
-      uiText.innerText  = "The letters look\u2026 different. Or maybe it\u2019s just me.";
-    }
-    if (step === 6) {
       npcName.innerText = "Partner";
       uiText.innerText  = "Is there anything in the news?";
     }
-    if (step === 8) {
+    if (step === 6) {
       npcName.innerText = "System";
-      uiText.innerText  = "Apartment... 20?";
+      uiText.innerText  = "The letters look\u2026 different. Or maybe it\u2019s just me.";
     }
-    if (step === 9) {
+    if (step === 8) {
       npcName.innerText = "Neighbor";
       uiText.innerText  = "Your apartment has always been 204.";
+    }
+    if (step === 9) {
+      npcName.innerText = "System";
+      uiText.innerText  = "Apartment... 20?";
     }
   }
 }
