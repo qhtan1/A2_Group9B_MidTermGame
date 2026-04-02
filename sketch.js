@@ -575,10 +575,13 @@ function checkInteractions() {
   );
 
   // Steps that are navigation-required (cannot skip to a door/exit).
-  // Alarm (step 0): must interact before leaving the bedroom — both days.
+  // Alarm (step 0): must interact before leaving the bedroom — all days.
+  // Mirror (step 1, Day 3 & 5): required so the door never overrides it — the
+  //   observation / sprite-swap moment is too important to accidentally skip.
   // Newspaper (step 5, Day 1 only): must read before leaving the living room.
   let stepIsRequired =
     world.sequenceStep === 0 ||
+    (world.sequenceStep === 1 && (world.currentDay === 3 || world.currentDay === 5)) ||
     (world.sequenceStep === 5 && world.currentDay === 1);
 
   // If the current step is an optional popup, also check whether the next
