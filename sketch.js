@@ -33,7 +33,7 @@ let elderlySprites = {
 
 // --- Loading progress ---
 let _loadedCount = 0;
-const _totalAssets = 48; // total loadImage() calls across all loops
+const _totalAssets = 49; // total loadImage() calls across all loops
 
 function _onAssetLoad() {
   _loadedCount++;
@@ -82,6 +82,57 @@ function adminJumpToStep(step) {
   document.getElementById("npc-name").innerText = "[ADMIN]";
   document.getElementById("dialogue-text").innerText =
     `Jumped to step ${step} — ${world.currentRoom} (Day ${world.currentDay})`;
+
+  updateMapHighlight();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP NAVIGATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Default player spawn position for each room when navigating via the map. */
+const MAP_ROOM_SPAWNS = {
+  Bedroom:    { x: 150, y: 130 },
+  Kitchen:    { x: 160, y: 160 },
+  LivingRoom: { x: 155, y: 160 },
+  Outside:    { x: 160, y: 120 },
+};
+
+/**
+ * Teleport the player to the chosen room.
+ * Sequence step is preserved — only the room and player position change.
+ * Called from the HTML map panel onclick handlers.
+ */
+function navigateToRoom(room) {
+  if (gameState !== "EXPLORE") return; // no fast-travel mid-popup
+  let spawn = MAP_ROOM_SPAWNS[room];
+  if (!spawn) return;
+
+  world.currentRoom = room;
+  player.x = spawn.x;
+  player.y = spawn.y;
+
+  document.getElementById("npc-name").innerText    = "System";
+  document.getElementById("dialogue-text").innerText = "Use WASD or Arrows to explore.";
+
+  updateMapHighlight();
+}
+
+/**
+ * Highlight the map zone that matches the player's current room.
+ * Safe to call at any time; skips silently if elements are not yet in the DOM.
+ */
+function updateMapHighlight() {
+  const zoneIds = {
+    Bedroom:    "zone-bedroom",
+    Kitchen:    "zone-kitchen",
+    LivingRoom: "zone-livingroom",
+    Outside:    "zone-outside",
+  };
+  for (let [room, id] of Object.entries(zoneIds)) {
+    let el = document.getElementById(id);
+    if (el) el.classList.toggle("map-active", room === world.currentRoom);
+  }
 }
 
 /**
@@ -118,6 +169,7 @@ function adminJumpToDay(day) {
   // Restore hidden panels for gameplay
   document.getElementById("checklist-panel").style.visibility = "visible";
   document.getElementById("coin-panel").style.visibility      = "visible";
+  document.getElementById("map-panel").style.visibility       = "visible";
   document.getElementById("npc-name").innerText    = "[ADMIN]";
   document.getElementById("dialogue-text").innerText =
     `Jumped to Day ${day} \u2014 start of day`;
@@ -365,6 +417,7 @@ function preload() {
   bgImages.Kitchen   = loadImage("assets/bg_kitchen.png",    _onAssetLoad, _onAssetLoad);
   bgImages.LivingRoom= loadImage("assets/bg_livingroom.png", _onAssetLoad, _onAssetLoad);
   bgImages.Outside   = loadImage("assets/bg_outside.jpg",    _onAssetLoad, _onAssetLoad);
+  bgImages.EndingB   = loadImage("assets/IMG_9033.jpg",      _onAssetLoad, _onAssetLoad);
 
   // --- Day 1 图片 ---
   uiImages.day1[0] = loadImage("assets/ui_clock.png",    _onAssetLoad, _onAssetLoad);
@@ -591,11 +644,12 @@ function checkInteractions() {
 
   // Steps that are navigation-required (cannot skip to a door/exit).
   // Alarm (step 0): must interact before leaving the bedroom — all days.
-  // Mirror (step 1, Day 3 & 5): required so the door never overrides it.
+  // Mirror (step 1, all days): door at (160,75) is only ~41px from mirror at (200,64),
+  //   well inside the 45px interaction radius, so mirror must always win proximity.
   // Newspaper (step 6, Day 1 only): must read before leaving the living room.
   let stepIsRequired =
     world.sequenceStep === 0 ||
-    (world.sequenceStep === 1 && (world.currentDay === 3 || world.currentDay === 5)) ||
+    world.sequenceStep === 1 ||
     (world.sequenceStep === 6 && world.currentDay === 1);
 
   // If the current step is an optional popup, also check whether the next
@@ -964,12 +1018,12 @@ function drawUIPopup() {
  *   opacity  — 0-255 tint alpha (Day 5 coins are more transparent)
  */
 function getCoinConfig(day) {
-  // Day 1 — base size (16 px), fully visible
+  // Day 1 — base size (16 px)
   if (day === 1) return { required: 3, size: 16, opacity: 255 };
-  // Day 3 — 25 % smaller (12 px), noticeably transparent, hidden in corners
-  if (day === 3) return { required: 4, size: 12, opacity: 110 };
-  // Day 5 — 50 % smaller (8 px), nearly transparent, very tight corners
-  return            { required: 5, size:  8, opacity:  55 };
+  // Day 3 — 25 % smaller (12 px)
+  if (day === 3) return { required: 4, size: 12, opacity: 255 };
+  // Day 5 — 50 % smaller (8 px)
+  return            { required: 5, size:  8, opacity: 255 };
 }
 
 /**
@@ -1333,6 +1387,7 @@ function processSequence() {
 
   setTimeout(() => {
     gameState = "EXPLORE";
+    updateMapHighlight(); // keep map in sync after every room transition
 
     if ((world.currentDay === 3 || world.currentDay === 5) && world.sequenceStep === 4) {
       document.getElementById("npc-name").innerText = "Partner";
@@ -1551,6 +1606,7 @@ function startGame() {
   document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("attention-panel").style.visibility = "hidden";
   document.getElementById("coin-panel").style.visibility      = "visible";
+  document.getElementById("map-panel").style.visibility       = "visible";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -1602,6 +1658,7 @@ function restartGame() {
 
   document.getElementById("day-display").innerText = "Day " + retryDay;
   document.getElementById("coin-panel").style.visibility = "visible";
+  document.getElementById("map-panel").style.visibility  = "visible";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -1772,6 +1829,7 @@ function startFamilyScene() {
   document.getElementById("attention-panel").style.visibility = "hidden";
   document.getElementById("timer-panel").style.visibility     = "hidden";
   document.getElementById("coin-panel").style.visibility      = "hidden";
+  document.getElementById("map-panel").style.visibility       = "hidden";
   document.getElementById("npc-name").innerText              = "";
   document.getElementById("dialogue-text").innerText         = "";
 }
@@ -2026,20 +2084,21 @@ function drawEndingB() {
   let sx = random(-shakeAmt,       shakeAmt);
   let sy = random(-shakeAmt * 0.6, shakeAmt * 0.6);
 
-  // ── Draw bedroom — with RGB chromatic aberration from phase 1 onward ─────
-  if (bgImages["Bedroom"]) {
+  // ── Draw Ending B background — with RGB chromatic aberration from phase 1 onward ─────
+  let endingBBg = bgImages["EndingB"] || bgImages["Bedroom"];
+  if (endingBBg) {
     if (endingPhase >= 1) {
       let split = 2 + endingPhase * 1.2;
       // Red channel — shift right
       tint(255, 80, 80, 130);
-      image(bgImages["Bedroom"], sx + split, sy,        width, height);
+      image(endingBBg, sx + split, sy,        width, height);
       // Blue channel — shift left
       tint(80, 80, 255, 130);
-      image(bgImages["Bedroom"], sx - split, sy + 1.5,  width, height);
+      image(endingBBg, sx - split, sy + 1.5,  width, height);
       noTint();
     }
     // Base image on top
-    image(bgImages["Bedroom"], sx, sy, width, height);
+    image(endingBBg, sx, sy, width, height);
   }
 
   // ── Draw player with maximum glitch (clarity ≈ 0) ────────────────────────
