@@ -324,7 +324,7 @@ const items = [
     step: 1,
     room: "Bedroom",
     x: 200,
-    y: 64,
+    y: 90,
     name: "Mirror",
     type: "popup",
     hint: "Press 'E' to look at mirror",
@@ -1843,9 +1843,12 @@ function startFamilyScene() {
  *   7 — choice (hold hand / pull away)
  */
 function drawFamilyScene() {
-  // Dark bedroom backdrop
-  if (bgImages["Bedroom"]) image(bgImages["Bedroom"], 0, 0, width, height);
-  fill(0, 0, 0, 210);
+  // Phase 7 (choice) uses the hand-reaching image; all other phases use bedroom
+  let sceneBg = (familyScenePhase === 7 && bgImages["EndingB"])
+    ? bgImages["EndingB"]
+    : bgImages["Bedroom"];
+  if (sceneBg) image(sceneBg, 0, 0, width, height);
+  fill(0, 0, 0, familyScenePhase === 7 ? 140 : 210);
   noStroke();
   rect(0, 0, width, height);
 
@@ -2084,21 +2087,20 @@ function drawEndingB() {
   let sx = random(-shakeAmt,       shakeAmt);
   let sy = random(-shakeAmt * 0.6, shakeAmt * 0.6);
 
-  // ── Draw Ending B background — with RGB chromatic aberration from phase 1 onward ─────
-  let endingBBg = bgImages["EndingB"] || bgImages["Bedroom"];
-  if (endingBBg) {
+  // ── Draw bedroom — with RGB chromatic aberration from phase 1 onward ─────
+  if (bgImages["Bedroom"]) {
     if (endingPhase >= 1) {
       let split = 2 + endingPhase * 1.2;
       // Red channel — shift right
       tint(255, 80, 80, 130);
-      image(endingBBg, sx + split, sy,        width, height);
+      image(bgImages["Bedroom"], sx + split, sy,        width, height);
       // Blue channel — shift left
       tint(80, 80, 255, 130);
-      image(endingBBg, sx - split, sy + 1.5,  width, height);
+      image(bgImages["Bedroom"], sx - split, sy + 1.5,  width, height);
       noTint();
     }
     // Base image on top
-    image(endingBBg, sx, sy, width, height);
+    image(bgImages["Bedroom"], sx, sy, width, height);
   }
 
   // ── Draw player with maximum glitch (clarity ≈ 0) ────────────────────────
