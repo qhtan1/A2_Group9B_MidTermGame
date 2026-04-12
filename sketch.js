@@ -33,7 +33,7 @@ let elderlySprites = {
 
 // --- Loading progress ---
 let _loadedCount = 0;
-const _totalAssets = 46; // total loadImage() calls across all loops
+const _totalAssets = 48; // total loadImage() calls across all loops
 
 function _onAssetLoad() {
   _loadedCount++;
@@ -97,6 +97,7 @@ function adminJumpToDay(day) {
   attentionSystem.reset();
   isDistorted = false;
   isWaitingForObservationChoice = false;
+  initDailyCoins(day); // resets coinCount, activeCoins, dailyCoinPlan, dailyCoinGoalReached
 
   // Reset Day 5 flags
   day5MirrorDone          = false;
@@ -116,6 +117,7 @@ function adminJumpToDay(day) {
 
   // Restore hidden panels for gameplay
   document.getElementById("checklist-panel").style.visibility = "visible";
+  document.getElementById("coin-panel").style.visibility      = "visible";
   document.getElementById("npc-name").innerText    = "[ADMIN]";
   document.getElementById("dialogue-text").innerText =
     `Jumped to Day ${day} \u2014 start of day`;
@@ -135,6 +137,13 @@ let dayStartPopupTime = 0;
 
 // ── Day 5 state ──────────────────────────────────────────────────────────────
 let day5MirrorDone = false;   // becomes true after player looks in mirror Day 5
+
+// ── Coin System ──────────────────────────────────────────────────────────────
+let coinImg              = null;  // loaded in preload()
+let coinCount            = 0;     // coins collected THIS day (resets each day)
+let activeCoins          = [];    // coins spawned for the currently-open popup
+let dailyCoinPlan        = {};    // sequenceStep → coin count for this day
+let dailyCoinGoalReached = false; // true once the day's required coins are found
 
 // Family scene (plays before the two endings)
 let familyScenePhase     = 0;   // 0–7  (dialogue pairs then choice)
@@ -362,7 +371,7 @@ function preload() {
   uiImages.day1[1] = loadImage("assets/ui_mirror.png",   _onAssetLoad, _onAssetLoad);
   uiImages.day1[3] = loadImage("assets/ui_tea.png",      _onAssetLoad, _onAssetLoad);
   uiImages.day1[5] = loadImage("assets/ui_partner.png",  _onAssetLoad, _onAssetLoad);
-  uiImages.day1[6] = loadImage("assets/ui_news.png",     _onAssetLoad, _onAssetLoad);
+  uiImages.day1[6] = loadImage("assets/Gemini_Generated_Image_fu2dgjfu2dgjfu2d.png", _onAssetLoad, _onAssetLoad);
   uiImages.day1[8] = loadImage("assets/ui_neighbor.png", _onAssetLoad, _onAssetLoad);
   uiImages.day1[9] = loadImage("assets/ui_door204.png",  _onAssetLoad, _onAssetLoad);
 
@@ -371,7 +380,7 @@ function preload() {
   uiImages.day3[1] = loadImage("assets/ui_mirror_day3.png",  _onAssetLoad, _onAssetLoad);
   uiImages.day3[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
   uiImages.day3[5] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
-  uiImages.day3[6] = loadImage("assets/ui_news_day3.png",    _onAssetLoad, _onAssetLoad);
+  uiImages.day3[6] = loadImage("assets/Gemini_Generated_Image_wgq4kmwgq4kmwgq4.png", _onAssetLoad, _onAssetLoad);
   uiImages.day3[8] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
   uiImages.day3[9] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
 
@@ -381,6 +390,7 @@ function preload() {
   uiImages.day5[3] = loadImage("assets/ui_tea_day3.png",     _onAssetLoad, _onAssetLoad);
   uiImages.day5[5] = loadImage("assets/ui_partner.png",      _onAssetLoad, _onAssetLoad);
   // day5[6] is drawn as messy text — no image needed
+  uiImages.day5[6] = loadImage("assets/IMG_9028.JPG",         _onAssetLoad, _onAssetLoad);
   uiImages.day5[8] = loadImage("assets/ui_neighbor.png",     _onAssetLoad, _onAssetLoad);
   uiImages.day5[9] = loadImage("assets/ui_door204_day3.png", _onAssetLoad, _onAssetLoad);
 
@@ -391,6 +401,8 @@ function preload() {
     playerSprites.left.push(loadImage(`assets/Left${i}.PNG`,   _onAssetLoad, _onAssetLoad));
     playerSprites.right.push(loadImage(`assets/Right${i}.PNG`, _onAssetLoad, _onAssetLoad));
   }
+
+  coinImg = loadImage("assets/coin.png", _onAssetLoad, _onAssetLoad);
 
   // Elderly sprites — Day 5 mirror swap
   for (let i = 1; i <= 3; i++) {
@@ -425,6 +437,9 @@ function setup() {
   timerSystem = new TimerSystem();
   attentionSystem = new AttentionSystem();
 
+  // Pre-plan coin placement for Day 1 and initialise the UI
+  initDailyCoins(1);
+  updateCoinUI();
 }
 
 function draw() {
@@ -576,11 +591,11 @@ function checkInteractions() {
 
   // Steps that are navigation-required (cannot skip to a door/exit).
   // Alarm (step 0): must interact before leaving the bedroom — all days.
-  // Mirror (step 1, Day 3 only): required so the door never overrides it.
+  // Mirror (step 1, Day 3 & 5): required so the door never overrides it.
   // Newspaper (step 6, Day 1 only): must read before leaving the living room.
   let stepIsRequired =
     world.sequenceStep === 0 ||
-    (world.sequenceStep === 1 && world.currentDay === 3) ||
+    (world.sequenceStep === 1 && (world.currentDay === 3 || world.currentDay === 5)) ||
     (world.sequenceStep === 6 && world.currentDay === 1);
 
   // If the current step is an optional popup, also check whether the next
@@ -799,6 +814,7 @@ function keyPressed() {
         }
 
         gameState = "INTERACT";
+        spawnCoinsForPopup();
 
         // Start timer on first interaction (alarm clock) and stop alarm sound
         if (world.sequenceStep === 0) {
@@ -819,6 +835,17 @@ function keyPressed() {
 
         updateDialogueForStep(world.sequenceStep);
       } else {
+        // Coin-lock: must meet today's coin requirement before using the staircase.
+        if (activeTarget.step === 10 && activeTarget.type === "exit") {
+          let _coinCfg = getCoinConfig(world.currentDay);
+          if (coinCount < _coinCfg.required) {
+            document.getElementById("npc-name").innerText = "System";
+            document.getElementById("dialogue-text").innerText =
+              "I don\u2019t have enough change yet\u2026";
+            return;
+          }
+        }
+
         // If player skipped an optional popup and went straight to a door/exit,
         // silently advance the sequence to match the target's step first.
         while (world.sequenceStep < activeTarget.step) {
@@ -847,21 +874,57 @@ function keyPressed() {
   }
 }
 
+/**
+ * Handle mouse clicks — used for coin collection during popup interactions.
+ */
+function mousePressed() {
+  if (mouseButton !== LEFT) return;
+  // Only collect coins while a popup is open
+  if (gameState !== "INTERACT") return;
+  // Observation choices are made via keyboard (1/2), not mouse — coins are still clickable
+  // Ignore clicks outside the canvas area
+  if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
+
+  let cfg        = getCoinConfig(world.currentDay);
+  let hitRadius  = cfg.size / 2 + 4; // slightly generous hit zone
+  let dayDialogue = COIN_DIALOGUES[world.currentDay] || COIN_DIALOGUES[5];
+
+  for (let c of activeCoins) {
+    if (c.collected) continue;
+    let bob = sin(millis() * 0.004 + c.x * 0.05) * 2;
+    if (dist(mouseX, mouseY, c.x, c.y + bob) < hitRadius) {
+      c.collected = true;
+      coinCount++;
+
+      // Show the per-coin dialogue line (index = coins collected so far, 1-based → 0-based)
+      let lineIdx = coinCount - 1;
+      if (lineIdx < dayDialogue.lines.length) {
+        document.getElementById("npc-name").innerText    = "System";
+        document.getElementById("dialogue-text").innerText = dayDialogue.lines[lineIdx];
+      }
+
+      // Check if the daily goal is newly reached
+      if (coinCount >= cfg.required && !dailyCoinGoalReached) {
+        dailyCoinGoalReached = true;
+        if (dayDialogue.goalLine) {
+          // Show goal-reached line after the per-coin line has had a moment to read
+          setTimeout(() => {
+            document.getElementById("npc-name").innerText    = "System";
+            document.getElementById("dialogue-text").innerText = dayDialogue.goalLine;
+          }, 1500);
+        }
+      }
+
+      updateCoinUI();
+      break; // one coin per click
+    }
+  }
+}
+
 function drawUIPopup() {
   let dayKey = "day" + world.currentDay;
   let img = uiImages[dayKey][world.sequenceStep];
 
-  // Day 5 newspaper (step 6) uses hand-drawn messy text instead of an image
-  if (world.currentDay === 5 && world.sequenceStep === 6) {
-    drawDay5Letter();
-    fill(0, 0, 0, 150);
-    rect(0, height - 20, width, 20);
-    fill("#ECE7D1");
-    textAlign(CENTER, CENTER);
-    textSize(8);
-    text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
-    return;
-  }
 
   push();
 
@@ -874,6 +937,8 @@ function drawUIPopup() {
   if (img) image(img, 0, 0, width, height); // 完美全图覆盖
   pop();
 
+  drawCoins(); // clickable coins layered on top of popup image
+
   fill(0, 0, 0, 150);
   rect(0, height - 20, width, 20);
   fill("#ECE7D1");
@@ -884,6 +949,189 @@ function drawUIPopup() {
     text("[ 1: Something is wrong   |   2: Looks normal ]", width / 2, height - 10);
   } else {
     text("[ PRESS SPACE TO CLOSE ]", width / 2, height - 10);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COIN SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Per-day coin settings.
+ * Game days map as: Day 1 → tier 1, Day 3 → tier 2, Day 5 → tier 3.
+ *   required — coins the player must collect to unlock the exit today
+ *   size     — coin sprite diameter in canvas pixels
+ *   opacity  — 0-255 tint alpha (Day 5 coins are more transparent)
+ */
+function getCoinConfig(day) {
+  // Day 1 — base size (16 px), fully visible
+  if (day === 1) return { required: 3, size: 16, opacity: 255 };
+  // Day 3 — 25 % smaller (12 px), noticeably transparent, hidden in corners
+  if (day === 3) return { required: 4, size: 12, opacity: 110 };
+  // Day 5 — 50 % smaller (8 px), nearly transparent, very tight corners
+  return            { required: 5, size:  8, opacity:  55 };
+}
+
+/**
+ * Per-coin dialogue lines and the goal-reached line shown after all are found.
+ * lines[i] is shown when the (i+1)th coin is collected.
+ * goalLine is shown once the daily requirement is met (null = no extra line).
+ * Keys match game day numbers (1, 3, 5).
+ */
+const COIN_DIALOGUES = {
+  1: {
+    lines: [
+      "I might need this.",
+      "Better bring some change.",
+      "That should be enough.",
+    ],
+    goalLine: "I can grab some groceries.",
+  },
+  3: {
+    lines: [
+      "Did I already take one?",
+      "Was this here before\u2026?",
+      "Why am I collecting these again?",
+      "This should be enough\u2026 I hope.",
+    ],
+    goalLine: "It feels important.",
+  },
+  5: {
+    lines: [
+      "I need more.",
+      "Still not enough.",
+      "Why are there so many\u2026?",
+      "Did I already check here?",
+      "I need them.",
+    ],
+    goalLine: null,
+  },
+};
+
+/**
+ * Pre-assign which popup steps will contain coins for the given day.
+ * Exactly one coin is placed in each selected step.
+ * The selection is random each time, so coins appear in different scenes each run.
+ * Call this whenever a new day begins (setup, day transition, restart).
+ */
+function initDailyCoins(day) {
+  dailyCoinPlan        = {};
+  dailyCoinGoalReached = false;
+  coinCount            = 0;
+  activeCoins          = [];
+
+  let cfg = getCoinConfig(day);
+
+  // All popup steps for this day (same set for all days now that mirror is accessible on Day 5)
+  let popupSteps = [0, 1, 3, 5, 6, 8, 9];
+
+  // Fisher-Yates shuffle using p5's random()
+  for (let i = popupSteps.length - 1; i > 0; i--) {
+    let j = floor(random(i + 1));
+    let tmp = popupSteps[i];
+    popupSteps[i] = popupSteps[j];
+    popupSteps[j] = tmp;
+  }
+
+  // Place 1 coin in each of the first `required` randomly chosen steps
+  for (let i = 0; i < min(cfg.required, popupSteps.length); i++) {
+    dailyCoinPlan[popupSteps[i]] = 1;
+  }
+
+  // Refresh the coin counter panel immediately (shows "0 / required" for the new day)
+  updateCoinUI();
+}
+
+/**
+ * Return a spawn position for a coin, appropriate to the given day.
+ * Day 1 — anywhere in the image area (easy to spot).
+ * Day 3 — one of four corner pockets (moderate difficulty).
+ * Day 5 — tiny corner pockets very close to the frame edge (hard to spot).
+ * Canvas is 320 × 180; bottom bar occupies the last 20 px (y ≥ 160).
+ */
+function getCoinSpawnPos(day) {
+  if (day === 3) {
+    // Four corner zones, each ~38 × 32 px
+    let zones = [
+      { x1:  8, x2: 46, y1:  8, y2: 40 }, // top-left
+      { x1: 274, x2: 312, y1:  8, y2: 40 }, // top-right
+      { x1:  8, x2: 46, y1: 124, y2: 156 }, // bottom-left
+      { x1: 274, x2: 312, y1: 124, y2: 156 }, // bottom-right
+    ];
+    let z = zones[floor(random(zones.length))];
+    return { x: random(z.x1, z.x2), y: random(z.y1, z.y2) };
+  }
+  if (day === 5) {
+    // Very tight corner pockets, ~18 × 18 px — coin nearly disappears into the frame
+    let zones = [
+      { x1:  4, x2: 22, y1:  4, y2: 22 }, // top-left
+      { x1: 298, x2: 316, y1:  4, y2: 22 }, // top-right
+      { x1:  4, x2: 22, y1: 140, y2: 158 }, // bottom-left
+      { x1: 298, x2: 316, y1: 140, y2: 158 }, // bottom-right
+    ];
+    let z = zones[floor(random(zones.length))];
+    return { x: random(z.x1, z.x2), y: random(z.y1, z.y2) };
+  }
+  // Day 1 — open random placement across the image
+  return {
+    x: random(25, width - 25),
+    y: random(18, height - 32),
+  };
+}
+
+/**
+ * Spawn coins for the popup that just opened.
+ * Uses dailyCoinPlan to know how many (0 or 1) belong to this step,
+ * then positions each coin according to the day's difficulty settings.
+ */
+function spawnCoinsForPopup() {
+  activeCoins = [];
+  let numCoins = dailyCoinPlan[world.sequenceStep] || 0;
+  for (let i = 0; i < numCoins; i++) {
+    let pos = getCoinSpawnPos(world.currentDay);
+    activeCoins.push({ x: pos.x, y: pos.y, collected: false });
+  }
+}
+
+/**
+ * Draw all uncollected coins layered on top of the popup image.
+ * Coins bob gently; size and opacity vary by day.
+ */
+function drawCoins() {
+  if (!coinImg || activeCoins.length === 0) return;
+  let cfg = getCoinConfig(world.currentDay);
+  let sz  = cfg.size;
+
+  push();
+  imageMode(CENTER);
+  for (let c of activeCoins) {
+    if (c.collected) continue;
+    let bob = sin(millis() * 0.004 + c.x * 0.05) * 2;
+    tint(255, cfg.opacity);
+    image(coinImg, c.x, c.y + bob, sz, sz);
+  }
+  noTint();
+  pop();
+}
+
+/**
+ * Update the HTML coin-counter panel.
+ * Shows "X / required" and whether the exit is now unlocked.
+ */
+function updateCoinUI() {
+  let cfg     = getCoinConfig(world.currentDay);
+  let countEl = document.getElementById("coin-count");
+  let hintEl  = document.getElementById("coin-hint");
+
+  if (countEl) countEl.innerText = coinCount + " / " + cfg.required;
+  if (hintEl) {
+    if (coinCount >= cfg.required) {
+      hintEl.innerText   = "ready to go out";
+      hintEl.style.color = "#4a7a30";
+    } else {
+      hintEl.innerText   = (cfg.required - coinCount) + " more needed";
+      hintEl.style.color = "#7a6a4f";
+    }
   }
 }
 
@@ -1036,6 +1284,7 @@ function drawDayStartPopup() {
 }
 
 function processSequence() {
+  activeCoins = []; // clear coins from any popup just closed
   gameState = "TRANSITION";
 
   if (world.sequenceStep === 10) {
@@ -1061,9 +1310,10 @@ function processSequence() {
 
   world.advanceSequence();
 
-  // Day 5: mirror (step 1) cannot be interacted with — auto-skip it
-  if (world.sequenceStep === 1 && world.currentDay === 5) {
-    world.advanceSequence();
+  // Day 5: closing the mirror popup triggers the elderly sprite swap
+  if (world.currentDay === 5 && world.sequenceStep === 2 && !day5MirrorDone) {
+    day5MirrorDone          = true;
+    player.useElderlySprite = true;
   }
 
   if (world.sequenceStep === 3) {
@@ -1164,6 +1414,10 @@ function updateDialogueForStep(step) {
       npcName.innerText = "System";
       uiText.innerText  = "7:00\u2026 I need to leave before 7:40\u2026 I think.";
     }
+    if (step === 1) {
+      npcName.innerText = "System";
+      uiText.innerText  = "I don\u2019t recognise\u2026 No. That\u2019s me. Isn\u2019t it?";
+    }
     if (step === 3) {
       npcName.innerText = "System";
       uiText.innerText  = "The tea tin... it looks the same as always.";
@@ -1242,6 +1496,7 @@ function _transitionToDay(nextDay) {
         attentionSystem.reset();
         isDistorted = false;
         isWaitingForObservationChoice = false;
+        initDailyCoins(nextDay); // resets coinCount, activeCoins, plan, goalReached
         setMusicDistortionLevel(0);
 
         document.getElementById("day-display").innerText = "Day " + nextDay;
@@ -1295,6 +1550,7 @@ function startGame() {
   if (document.activeElement) document.activeElement.blur();
   document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("attention-panel").style.visibility = "hidden";
+  document.getElementById("coin-panel").style.visibility      = "visible";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -1342,8 +1598,10 @@ function restartGame() {
   _alarmEl.pause(); _alarmEl.currentTime = 0; // stop alarm on restart
   isDistorted = false;
   isWaitingForObservationChoice = false;
+  initDailyCoins(retryDay); // resets coinCount, activeCoins, plan, goalReached
 
   document.getElementById("day-display").innerText = "Day " + retryDay;
+  document.getElementById("coin-panel").style.visibility = "visible";
   document.getElementById("npc-name").innerText = "System";
   document.getElementById("dialogue-text").innerText =
     "Note to self: don\u2019t forget\u2026 finish routine before leaving.";
@@ -1513,6 +1771,7 @@ function startFamilyScene() {
   document.getElementById("checklist-panel").style.visibility = "hidden";
   document.getElementById("attention-panel").style.visibility = "hidden";
   document.getElementById("timer-panel").style.visibility     = "hidden";
+  document.getElementById("coin-panel").style.visibility      = "hidden";
   document.getElementById("npc-name").innerText              = "";
   document.getElementById("dialogue-text").innerText         = "";
 }

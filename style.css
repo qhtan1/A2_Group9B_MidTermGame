@@ -203,6 +203,60 @@ body {
   font-weight: 600;
 }
 
+/* --- 硬币面板 (Coin Panel) --- */
+#coin-panel {
+  position: absolute;
+  top: 220px;
+  right: -170px;
+  width: 160px;
+  background: rgba(236, 231, 209, 0.98);
+  border: 3px solid #8a7650;
+  border-radius: 4px;
+  padding: 10px;
+  box-sizing: border-box;
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 75;
+  backdrop-filter: blur(2px);
+}
+
+#coin-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a4a2f;
+  text-transform: uppercase;
+  border-bottom: 2px solid #8a7650;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+#coin-count-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#coin-icon {
+  font-size: 18px;
+  color: #c8a020;
+  line-height: 1;
+}
+
+#coin-count {
+  font-size: 22px;
+  font-weight: 700;
+  color: #5a4a2f;
+  line-height: 1;
+}
+
+#coin-hint {
+  font-size: 9px;
+  color: #7a6a4f;
+  margin-top: 5px;
+  font-style: italic;
+  min-height: 12px;
+}
+
 /* --- 注意力面板 (CSS版本) --- */
 #attention-panel {
   position: absolute;
