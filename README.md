@@ -8,15 +8,13 @@
 
 ## Group Members (Group 9B)
 
-> **Note:** Please replace the placeholder WatIDs and student numbers below before submitting.
-
 | Name | WatID | Student # |
-|------|-------|-----------|
-| Kiki Tan | _wat-id_ | _########_ |
-| Tracey Chen | _wat-id_ | _########_ |
-| Rini Lu | _wat-id_ | _########_ |
-| Lynette Shen | _wat-id_ | _########_ |
-| Annora Zhu | _wat-id_ | _########_ |
+|------|--------|-----------|
+| Kiki Tan | qhtan | 20878699 |
+| Tracey Chen | t44chen | 21057118 |
+| Rini Lu | r28lu | 21091404 |
+| Lynette Shen | l34shen | 21068630 |
+| Annora Zhu | y65zhu | 21057605 |
 
 ---
 
